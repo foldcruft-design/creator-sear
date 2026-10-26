@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -45,9 +43,9 @@ import androidx.compose.ui.window.Dialog
 import com.example.data.repository.AuthRepository
 import com.example.ui.components.GlassButton
 import com.example.ui.components.GlassTextField
-import com.example.ui.components.IceCyan
-import com.example.ui.components.IceSilver
-import com.example.ui.components.MutedSlate
+import com.example.ui.theme.GlassTextMuted
+import com.example.ui.theme.GlassTextPrimary
+import com.example.ui.theme.GlassTextSecondary
 import kotlinx.coroutines.launch
 
 @Composable
@@ -68,18 +66,18 @@ fun AuthDialog(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp))
+                .clip(RoundedCornerShape(30.dp))
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color(0xFF131724), Color(0xFF090B10))
+                        colors = listOf(Color(0xE614161C), Color(0xF208090C))
                     )
                 )
                 .border(
                     1.dp,
-                    Brush.verticalGradient(listOf(Color(0x5538BDF8), Color(0x15FFFFFF))),
-                    RoundedCornerShape(28.dp)
+                    Brush.verticalGradient(listOf(Color(0x60FFFFFF), Color(0x14FFFFFF))),
+                    RoundedCornerShape(30.dp)
                 )
-                .padding(24.dp)
+                .padding(26.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -88,17 +86,17 @@ fun AuthDialog(
                 // Header badge
                 Box(
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(52.dp)
                         .clip(CircleShape)
-                        .background(Color(0x2438BDF8))
-                        .border(1.dp, Color(0x6638BDF8), CircleShape),
+                        .background(Color(0x28FFFFFF))
+                        .border(1.5.dp, Color(0x80FFFFFF), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Shield,
                         contentDescription = null,
-                        tint = IceCyan,
-                        modifier = Modifier.size(24.dp)
+                        tint = Color.White,
+                        modifier = Modifier.size(26.dp)
                     )
                 }
 
@@ -114,8 +112,8 @@ fun AuthDialog(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "Сохраняйте проекты и экспортируйте видео без потери битрейта",
-                    color = MutedSlate,
+                    text = "Сохраняйте проекты и экспортируйте видео без потери качества",
+                    color = GlassTextMuted,
                     fontSize = 12.sp,
                     lineHeight = 16.sp,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -127,25 +125,25 @@ fun AuthDialog(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(Color(0x10FFFFFF))
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color(0x12FFFFFF))
                         .padding(4.dp)
                 ) {
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(if (isSignUp) Color(0x3338BDF8) else Color.Transparent)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (isSignUp) Color(0x35FFFFFF) else Color.Transparent)
                             .clickable {
                                 isSignUp = true
                                 errorMessage = null
                             }
-                            .padding(vertical = 8.dp),
+                            .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "Регистрация",
-                            color = if (isSignUp) Color.White else MutedSlate,
+                            color = if (isSignUp) Color.White else GlassTextMuted,
                             fontSize = 13.sp,
                             fontWeight = if (isSignUp) FontWeight.SemiBold else FontWeight.Normal
                         )
@@ -154,18 +152,18 @@ fun AuthDialog(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(if (!isSignUp) Color(0x3338BDF8) else Color.Transparent)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (!isSignUp) Color(0x35FFFFFF) else Color.Transparent)
                             .clickable {
                                 isSignUp = false
                                 errorMessage = null
                             }
-                            .padding(vertical = 8.dp),
+                            .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "Вход",
-                            color = if (!isSignUp) Color.White else MutedSlate,
+                            color = if (!isSignUp) Color.White else GlassTextMuted,
                             fontSize = 13.sp,
                             fontWeight = if (!isSignUp) FontWeight.SemiBold else FontWeight.Normal
                         )
@@ -174,7 +172,7 @@ fun AuthDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Input fields
+                // Fields
                 if (isSignUp) {
                     GlassTextField(
                         value = username,
@@ -194,7 +192,7 @@ fun AuthDialog(
                         email = it
                         errorMessage = null
                     },
-                    placeholder = "Email (например, creator@tok.io)",
+                    placeholder = "Email (creator@tok.io)",
                     leadingIcon = Icons.Default.Email,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                 )
@@ -219,14 +217,14 @@ fun AuthDialog(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Color(0x33EF4444))
-                                .border(1.dp, Color(0x66EF4444), RoundedCornerShape(10.dp))
-                                .padding(horizontal = 12.dp, vertical = 8.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0x30FFFFFF))
+                                .border(1.dp, Color(0x60FFFFFF), RoundedCornerShape(12.dp))
+                                .padding(horizontal = 14.dp, vertical = 10.dp)
                         ) {
                             Text(
                                 text = errorMessage.orEmpty(),
-                                color = Color(0xFFFCA5A5),
+                                color = Color.White,
                                 fontSize = 12.sp
                             )
                         }
@@ -237,12 +235,12 @@ fun AuthDialog(
 
                 if (isLoading) {
                     CircularProgressIndicator(
-                        color = IceCyan,
+                        color = Color.White,
                         modifier = Modifier.size(36.dp)
                     )
                 } else {
                     GlassButton(
-                        text = if (isSignUp) "Создать аккаунт" else "Войти в профиль",
+                        text = if (isSignUp) "Создать аккаунт" else "Войти",
                         isPrimary = true,
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
@@ -265,7 +263,7 @@ fun AuthDialog(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Box(
                     modifier = Modifier
@@ -278,8 +276,8 @@ fun AuthDialog(
                         .padding(vertical = 8.dp)
                 ) {
                     Text(
-                        text = "Продолжить как гость",
-                        color = MutedSlate,
+                        text = "Продолжить без регистрации",
+                        color = GlassTextMuted,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
                     )

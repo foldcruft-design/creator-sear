@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import com.example.data.repository.AuthRepository
 import com.example.data.repository.VideoProjectRepository
 import com.example.ui.screens.HomeScreen
-import com.example.ui.theme.DarkObsidian
+import com.example.ui.theme.GlassObsidian
 import com.example.ui.theme.TokEnhanceTheme
 
 class MainActivity : ComponentActivity() {
@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
             TokEnhanceTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = DarkObsidian
+                    color = GlassObsidian
                 ) {
                     HomeScreen(
                         authRepository = authRepository,

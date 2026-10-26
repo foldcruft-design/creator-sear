@@ -23,7 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.VideoLibrary
-import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -37,9 +36,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.ProjectEntity
-import com.example.ui.components.IceCyan
-import com.example.ui.components.IceSilver
-import com.example.ui.components.MutedSlate
+import com.example.ui.theme.GlassTextMuted
+import com.example.ui.theme.GlassTextPrimary
+import com.example.ui.theme.GlassTextSecondary
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -61,20 +60,20 @@ fun ProjectsScreen(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Box(
                     modifier = Modifier
-                        .size(64.dp)
+                        .size(68.dp)
                         .clip(CircleShape)
                         .background(Color(0x18FFFFFF))
-                        .border(1.dp, Color(0x30FFFFFF), CircleShape),
+                        .border(1.dp, Color(0x35FFFFFF), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.VideoLibrary,
                         contentDescription = null,
-                        tint = MutedSlate,
+                        tint = Color.White,
                         modifier = Modifier.size(32.dp)
                     )
                 }
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(18.dp))
                 Text(
                     text = "История проектов пуста",
                     color = Color.White,
@@ -83,8 +82,8 @@ fun ProjectsScreen(
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "Улучшите свое первое видео, и оно появится здесь со всеми параметрами.",
-                    color = MutedSlate,
+                    text = "Обработайте видео во вкладке Оптимизация, и оно появится здесь.",
+                    color = GlassTextMuted,
                     fontSize = 12.sp,
                     lineHeight = 16.sp,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -96,7 +95,7 @@ fun ProjectsScreen(
             modifier = modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(vertical = 12.dp),
+            contentPadding = PaddingValues(vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(projects, key = { it.id }) { project ->
@@ -122,16 +121,16 @@ fun ProjectCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(22.dp))
             .background(
                 Brush.verticalGradient(
-                    listOf(Color(0x1CFFFFFF), Color(0x0CFFFFFF))
+                    listOf(Color(0x1EFFFFFF), Color(0x0CFFFFFF))
                 )
             )
             .border(
                 1.dp,
-                Brush.verticalGradient(listOf(Color(0x33FFFFFF), Color(0x0DFFFFFF))),
-                RoundedCornerShape(20.dp)
+                Brush.verticalGradient(listOf(Color(0x38FFFFFF), Color(0x0EFFFFFF))),
+                RoundedCornerShape(22.dp)
             )
             .clickable(onClick = onSelect)
             .padding(16.dp)
@@ -140,19 +139,19 @@ fun ProjectCard(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            // Play thumbnail placeholder
+            // Frosted Play thumb
             Box(
                 modifier = Modifier
                     .size(56.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(Color(0xFF0F172A))
-                    .border(1.dp, Color(0x4038BDF8), RoundedCornerShape(14.dp)),
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0x24FFFFFF))
+                    .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.PlayArrow,
                     contentDescription = null,
-                    tint = IceCyan,
+                    tint = Color.White,
                     modifier = Modifier.size(28.dp)
                 )
             }
@@ -172,7 +171,7 @@ fun ProjectCard(
 
                 Text(
                     text = "${project.presetName} • ${project.fps} FPS",
-                    color = IceCyan,
+                    color = GlassTextSecondary,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -182,13 +181,13 @@ fun ProjectCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = "${project.resolution} • ${project.targetBitrateMbps} Mbps",
-                        color = MutedSlate,
+                        color = GlassTextMuted,
                         fontSize = 11.sp
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "• $dateStr",
-                        color = MutedSlate.copy(alpha = 0.7f),
+                        color = GlassTextMuted.copy(alpha = 0.7f),
                         fontSize = 10.sp
                     )
                 }
@@ -196,13 +195,13 @@ fun ProjectCard(
 
             IconButton(
                 onClick = onDelete,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(38.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Удалить",
-                    tint = MutedSlate.copy(alpha = 0.6f),
-                    modifier = Modifier.size(18.dp)
+                    tint = GlassTextMuted,
+                    modifier = Modifier.size(19.dp)
                 )
             }
         }

@@ -2,6 +2,7 @@ package com.example.data.repository
 
 import android.content.ContentValues
 import android.content.Context
+import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -15,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.util.UUID
@@ -30,7 +32,8 @@ class VideoProjectRepository(private val context: Context) {
         userId: String,
         videoItem: VideoItem,
         settings: EnhanceSettings,
-        report: TikTokReadinessReport
+        report: TikTokReadinessReport,
+        enhancedFilePath: String? = null
     ): ProjectEntity = withContext(Dispatchers.IO) {
         val projectId = UUID.randomUUID().toString()
         val project = ProjectEntity(
@@ -38,7 +41,7 @@ class VideoProjectRepository(private val context: Context) {
             userId = userId,
             title = videoItem.title,
             originalUri = videoItem.uri.toString(),
-            enhancedUri = videoItem.uri.toString(),
+            enhancedUri = enhancedFilePath ?: videoItem.uri.toString(),
             presetName = settings.preset.title,
             originalBitrateMbps = videoItem.originalBitrateMbps,
             targetBitrateMbps = settings.targetBitrateMbps,
@@ -58,21 +61,26 @@ class VideoProjectRepository(private val context: Context) {
         projectDao.deleteProjectById(projectId)
     }
 
+    /**
+     * Directly saves the enhanced video to the device's public Gallery (Movies/TokEnhance).
+     * Scans media so it appears immediately in the user's Gallery / Photos app.
+     */
     suspend fun exportVideoToGallery(
         videoItem: VideoItem,
-        settings: EnhanceSettings
-    ): Uri? = withContext(Dispatchers.IO) {
+        enhancedFile: File? = null
+    ): Pair<Uri?, String?> = withContext(Dispatchers.IO) {
         try {
             val fileName = "TokEnhance_${System.currentTimeMillis()}_1080p60.mp4"
             val resolver = context.contentResolver
 
-            val inputStream: InputStream? = if (videoItem.rawResId != null) {
-                context.resources.openRawResource(videoItem.rawResId)
-            } else {
-                resolver.openInputStream(videoItem.uri)
+            val inputStream: InputStream? = when {
+                enhancedFile != null && enhancedFile.exists() -> FileInputStream(enhancedFile)
+                videoItem.localFilePath != null -> FileInputStream(File(videoItem.localFilePath))
+                videoItem.rawResId != null -> context.resources.openRawResource(videoItem.rawResId)
+                else -> resolver.openInputStream(videoItem.uri)
             }
 
-            if (inputStream == null) return@withContext null
+            if (inputStream == null) return@withContext Pair(null, null)
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val contentValues = ContentValues().apply {
@@ -83,7 +91,7 @@ class VideoProjectRepository(private val context: Context) {
                 }
 
                 val collection = MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-                val itemUri = resolver.insert(collection, contentValues) ?: return@withContext null
+                val itemUri = resolver.insert(collection, contentValues) ?: return@withContext Pair(null, null)
 
                 resolver.openOutputStream(itemUri)?.use { outputStream ->
                     inputStream.copyTo(outputStream)
@@ -93,7 +101,15 @@ class VideoProjectRepository(private val context: Context) {
                 contentValues.put(MediaStore.Video.Media.IS_PENDING, 0)
                 resolver.update(itemUri, contentValues, null, null)
 
-                return@withContext itemUri
+                // Scan file so Gallery shows it instantly
+                MediaScannerConnection.scanFile(
+                    context,
+                    arrayOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).absolutePath + "/TokEnhance/" + fileName),
+                    arrayOf("video/mp4"),
+                    null
+                )
+
+                return@withContext Pair(itemUri, "Movies/TokEnhance/$fileName")
             } else {
                 val moviesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
                 val targetDir = File(moviesDir, "TokEnhance").apply { mkdirs() }
@@ -102,11 +118,19 @@ class VideoProjectRepository(private val context: Context) {
                 FileOutputStream(targetFile).use { outputStream ->
                     inputStream.copyTo(outputStream)
                 }
-                return@withContext Uri.fromFile(targetFile)
+
+                MediaScannerConnection.scanFile(
+                    context,
+                    arrayOf(targetFile.absolutePath),
+                    arrayOf("video/mp4"),
+                    null
+                )
+
+                return@withContext Pair(Uri.fromFile(targetFile), targetFile.absolutePath)
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            null
+            Pair(null, null)
         }
     }
 }

@@ -1,9 +1,5 @@
 package com.example.ui.components
 
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -22,7 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -34,18 +29,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.domain.model.EnhanceSettings
 import com.example.domain.model.TikTokReadinessReport
+import com.example.ui.theme.GlassTextMuted
+import com.example.ui.theme.GlassTextPrimary
+import com.example.ui.theme.GlassTextSecondary
 
 @Composable
 fun ResultExportSheet(
     report: TikTokReadinessReport,
     settings: EnhanceSettings,
+    savedPath: String? = null,
     onSaveToGallery: () -> Unit,
     onShareToTikTok: () -> Unit,
     onDismiss: () -> Unit
@@ -54,44 +52,44 @@ fun ResultExportSheet(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp))
+                .clip(RoundedCornerShape(30.dp))
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color(0xFF131724), Color(0xFF090B10))
+                        colors = listOf(Color(0xE614161C), Color(0xF208090C))
                     )
                 )
                 .border(
                     1.dp,
-                    Brush.verticalGradient(listOf(Color(0x6638BDF8), Color(0x15FFFFFF))),
-                    RoundedCornerShape(28.dp)
+                    Brush.verticalGradient(listOf(Color(0x60FFFFFF), Color(0x14FFFFFF))),
+                    RoundedCornerShape(30.dp)
                 )
-                .padding(24.dp)
+                .padding(26.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Success badge
+                // Frosted Verified Emblem
                 Box(
                     modifier = Modifier
-                        .size(56.dp)
+                        .size(58.dp)
                         .clip(CircleShape)
-                        .background(Color(0x2210B981))
-                        .border(1.dp, Color(0xFF10B981), CircleShape),
+                        .background(Color(0x28FFFFFF))
+                        .border(1.5.dp, Color(0x80FFFFFF), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Verified,
+                        imageVector = Icons.Default.Check,
                         contentDescription = null,
-                        tint = Color(0xFF10B981),
-                        modifier = Modifier.size(32.dp)
+                        tint = Color.White,
+                        modifier = Modifier.size(30.dp)
                     )
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
-                    text = "Видео готово для TikTok!",
+                    text = "Видео успешно улучшено!",
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
@@ -100,8 +98,8 @@ fun ResultExportSheet(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "Алгоритмы защиты от сжатия успешно применены",
-                    color = MutedSlate,
+                    text = "Алгоритмы защиты от сжатия применены к файлу",
+                    color = GlassTextMuted,
                     fontSize = 12.sp
                 )
 
@@ -111,9 +109,9 @@ fun ResultExportSheet(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(18.dp))
+                        .clip(RoundedCornerShape(20.dp))
                         .background(Color(0x18FFFFFF))
-                        .border(1.dp, Color(0x26FFFFFF), RoundedCornerShape(18.dp))
+                        .border(1.dp, Color(0x30FFFFFF), RoundedCornerShape(20.dp))
                         .padding(16.dp)
                 ) {
                     Row(
@@ -123,7 +121,7 @@ fun ResultExportSheet(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "ИНДЕКС ЗАЩИТЫ TIKTOK",
-                                color = MutedSlate,
+                                color = GlassTextMuted,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.5.sp
@@ -131,7 +129,7 @@ fun ResultExportSheet(
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "${report.score}% Anti-Compression",
-                                color = IceCyan,
+                                color = Color.White,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -139,13 +137,14 @@ fun ResultExportSheet(
 
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Color(0x2A38BDF8))
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0x30FFFFFF))
+                                .border(1.dp, Color(0x50FFFFFF), RoundedCornerShape(12.dp))
+                                .padding(horizontal = 10.dp, vertical = 5.dp)
                         ) {
                             Text(
-                                text = "DIRECT STREAM",
-                                color = IceCyan,
+                                text = "1080P PASSTHROUGH",
+                                color = Color.White,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -155,24 +154,43 @@ fun ResultExportSheet(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Diagnostics grid
+                // Diagnostic parameters
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    SpecRow(label = "Разрешение", value = settings.targetResolution)
+                    SpecRow(label = "Целевое разрешение", value = settings.targetResolution)
                     SpecRow(label = "Частота кадров", value = "${settings.targetFps} FPS Smooth")
-                    SpecRow(label = "Целевой битрейт", value = "${settings.targetBitrateMbps} Mbps (Sweet-Spot)")
-                    SpecRow(label = "Unsharp Mask", value = "+${settings.sharpness}% Резкость")
-                    SpecRow(label = "Защита теней", value = "+${settings.shadowLift}% Динамический диапазон")
-                    SpecRow(label = "Anti-Banding", value = if (settings.antiBanding) "Активен (Dithered)" else "Выкл")
+                    SpecRow(label = "Битрейт TikTok Sweet-Spot", value = "${settings.targetBitrateMbps} Mbps")
+                    SpecRow(label = "Адаптивная резкость", value = "+${settings.sharpness}% (Halo Free)")
+                    SpecRow(label = "Защита теней", value = "+${settings.shadowLift}% (IRE Curve)")
+                    SpecRow(label = "Anti-Banding", value = if (settings.antiBanding) "Активен" else "Выкл")
                 }
 
-                Spacer(modifier = Modifier.height(22.dp))
+                if (savedPath != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0x1EFFFFFF))
+                            .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(12.dp))
+                            .padding(10.dp)
+                    ) {
+                        Text(
+                            text = "Файл сохранён в: $savedPath",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
 
-                // Action buttons
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Download Button (Primary)
                 GlassButton(
-                    text = "Скачать в Галерею",
+                    text = "Скачать видео в Галерею",
                     icon = Icons.Default.Download,
                     isPrimary = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -181,8 +199,9 @@ fun ResultExportSheet(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
+                // Share Button
                 GlassButton(
-                    text = "Поделиться / Открыть в TikTok",
+                    text = "Поделиться / Отправить",
                     icon = Icons.Default.Share,
                     isPrimary = false,
                     modifier = Modifier.fillMaxWidth(),
@@ -198,7 +217,7 @@ fun ResultExportSheet(
                 ) {
                     Text(
                         text = "Закрыть",
-                        color = MutedSlate,
+                        color = GlassTextMuted,
                         fontSize = 13.sp
                     )
                 }
@@ -212,13 +231,13 @@ private fun SpecRow(label: String, value: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(Color(0x0AFFFFFF))
-            .padding(horizontal = 12.dp, vertical = 7.dp),
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0x10FFFFFF))
+            .padding(horizontal = 14.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = label, color = MutedSlate, fontSize = 12.sp)
-        Text(text = value, color = IceSilver, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        Text(text = label, color = GlassTextMuted, fontSize = 12.sp)
+        Text(text = value, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
     }
 }

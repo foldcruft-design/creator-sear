@@ -2,17 +2,24 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val DarkObsidian = Color(0xFF090A0E)
-val DarkBackground = Color(0xFF0D1018)
-val DarkSurface = Color(0xFF131722)
-val DarkSurfaceElevated = Color(0xFF1A2030)
+// Pure Monochrome Dark Glassmorphism Palette (No blue, no neon)
+val GlassObsidian = Color(0xFF060709)
+val GlassBackground = Color(0xFF0A0C10)
+val GlassSurface = Color(0x18FFFFFF)
+val GlassSurfaceElevated = Color(0x24FFFFFF)
+val GlassSurfaceHover = Color(0x30FFFFFF)
 
-val AccentCyan = Color(0xFF38BDF8)
-val AccentCyanDark = Color(0xFF0284C7)
-val AccentSilver = Color(0xFFE2E8F0)
-val AccentMuted = Color(0xFF94A3B8)
-val AccentBorder = Color(0x30FFFFFF)
-val AccentBorderActive = Color(0x8038BDF8)
+// Frosted glass borders
+val GlassBorder = Color(0x2EFFFFFF)
+val GlassBorderSubtle = Color(0x14FFFFFF)
+val GlassBorderGlow = Color(0x55FFFFFF)
 
-val EmeraldSuccess = Color(0xFF10B981)
-val RoseError = Color(0xFFF43F5E)
+// Text tokens
+val GlassTextPrimary = Color(0xFFFFFFFF)
+val GlassTextSecondary = Color(0xFFD4D8E0)
+val GlassTextMuted = Color(0xFF8890A0)
+
+// Transparent frosted button fill
+val GlassButtonBg = Color(0x22FFFFFF)
+val GlassButtonBgPressed = Color(0x38FFFFFF)
+val GlassButtonBorder = Color(0x40FFFFFF)

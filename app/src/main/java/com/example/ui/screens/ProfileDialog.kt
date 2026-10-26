@@ -18,7 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -37,9 +36,9 @@ import androidx.compose.ui.window.Dialog
 import com.example.data.local.UserEntity
 import com.example.data.repository.AuthRepository
 import com.example.ui.components.GlassButton
-import com.example.ui.components.IceCyan
-import com.example.ui.components.IceSilver
-import com.example.ui.components.MutedSlate
+import com.example.ui.theme.GlassTextMuted
+import com.example.ui.theme.GlassTextPrimary
+import com.example.ui.theme.GlassTextSecondary
 import kotlinx.coroutines.launch
 
 @Composable
@@ -55,34 +54,34 @@ fun ProfileDialog(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp))
+                .clip(RoundedCornerShape(30.dp))
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color(0xFF131724), Color(0xFF090B10))
+                        colors = listOf(Color(0xE614161C), Color(0xF208090C))
                     )
                 )
                 .border(
                     1.dp,
-                    Brush.verticalGradient(listOf(Color(0x5538BDF8), Color(0x15FFFFFF))),
-                    RoundedCornerShape(28.dp)
+                    Brush.verticalGradient(listOf(Color(0x60FFFFFF), Color(0x14FFFFFF))),
+                    RoundedCornerShape(30.dp)
                 )
-                .padding(24.dp)
+                .padding(26.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Large Avatar
+                // Large Frosted Avatar
                 Box(
                     modifier = Modifier
-                        .size(68.dp)
+                        .size(72.dp)
                         .clip(CircleShape)
                         .background(
-                            Brush.linearGradient(
-                                listOf(Color(0xFF0284C7), Color(0xFF38BDF8))
+                            Brush.verticalGradient(
+                                listOf(Color(0x40FFFFFF), Color(0x15FFFFFF))
                             )
                         )
-                        .border(2.dp, Color(0x8038BDF8), CircleShape),
+                        .border(2.dp, Color(0x80FFFFFF), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -104,7 +103,7 @@ fun ProfileDialog(
 
                 Text(
                     text = user.email,
-                    color = MutedSlate,
+                    color = GlassTextMuted,
                     fontSize = 12.sp
                 )
 
@@ -114,21 +113,21 @@ fun ProfileDialog(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
-                        .background(Color(0x2838BDF8))
-                        .border(1.dp, Color(0x6638BDF8), RoundedCornerShape(20.dp))
-                        .padding(horizontal = 12.dp, vertical = 5.dp)
+                        .background(Color(0x22FFFFFF))
+                        .border(1.dp, Color(0x45FFFFFF), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Bolt,
                             contentDescription = null,
-                            tint = IceCyan,
+                            tint = Color.White,
                             modifier = Modifier.size(14.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = user.tier,
-                            color = IceCyan,
+                            color = Color.White,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -145,23 +144,23 @@ fun ProfileDialog(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(18.dp))
                             .background(Color(0x14FFFFFF))
-                            .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(16.dp))
-                            .padding(12.dp),
+                            .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(18.dp))
+                            .padding(14.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = "${user.videosEnhancedCount}",
                                 color = Color.White,
-                                fontSize = 20.sp,
+                                fontSize = 22.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Улучшено видео",
-                                color = MutedSlate,
+                                text = "Обработано видео",
+                                color = GlassTextMuted,
                                 fontSize = 10.sp
                             )
                         }
@@ -170,23 +169,23 @@ fun ProfileDialog(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(18.dp))
                             .background(Color(0x14FFFFFF))
-                            .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(16.dp))
-                            .padding(12.dp),
+                            .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(18.dp))
+                            .padding(14.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = "99%",
-                                color = IceCyan,
-                                fontSize = 20.sp,
+                                color = Color.White,
+                                fontSize = 22.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "Индекс защиты",
-                                color = MutedSlate,
+                                color = GlassTextMuted,
                                 fontSize = 10.sp
                             )
                         }
@@ -199,21 +198,21 @@ fun ProfileDialog(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0x0EFFFFFF))
-                        .padding(14.dp),
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color(0x10FFFFFF))
+                        .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    FeatureCheckItem(text = "Нейро-резкость Unsharp Mask (до 100%)")
-                    FeatureCheckItem(text = "Защита глубоких теней от блочности (+40% IRE)")
-                    FeatureCheckItem(text = "Anti-Banding дизеринг матрица")
-                    FeatureCheckItem(text = "Target TikTok Sweet-Spot 14.5 Mbps")
+                    FeatureCheckItem(text = "Адаптивная резкость (Halo Free)")
+                    FeatureCheckItem(text = "Калибровка теней 0-15 IRE")
+                    FeatureCheckItem(text = "Anti-Banding матрица градиентов")
+                    FeatureCheckItem(text = "TikTok Bitrate Sweet-Spot 14.5 Mbps")
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
 
                 GlassButton(
-                    text = "Сменить профиль / Войти",
+                    text = "Сменить профиль / Выйти",
                     icon = Icons.Default.Logout,
                     isPrimary = false,
                     modifier = Modifier.fillMaxWidth(),
@@ -232,7 +231,7 @@ fun ProfileDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Закрыть", color = MutedSlate, fontSize = 13.sp)
+                    Text(text = "Закрыть", color = GlassTextMuted, fontSize = 13.sp)
                 }
             }
         }
@@ -245,14 +244,14 @@ private fun FeatureCheckItem(text: String) {
         Icon(
             imageVector = Icons.Default.Check,
             contentDescription = null,
-            tint = IceCyan,
-            modifier = Modifier.size(14.dp)
+            tint = Color.White,
+            modifier = Modifier.size(15.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = text,
-            color = IceSilver,
-            fontSize = 11.sp
+            color = GlassTextSecondary,
+            fontSize = 12.sp
         )
     }
 }

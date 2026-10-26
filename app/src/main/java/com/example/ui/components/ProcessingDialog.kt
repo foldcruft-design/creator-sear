@@ -41,6 +41,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.domain.model.ProcessingStage
+import com.example.ui.theme.GlassTextMuted
+import com.example.ui.theme.GlassTextPrimary
+import com.example.ui.theme.GlassTextSecondary
 
 @Composable
 fun ProcessingDialog(
@@ -48,42 +51,42 @@ fun ProcessingDialog(
     progress: Float,
     onDismissRequest: () -> Unit
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "spin")
+    val infiniteTransition = rememberInfiniteTransition(label = "glass_spin")
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2200, easing = LinearEasing),
+            animation = tween(2400, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "rotation"
     )
 
     Dialog(
-        onDismissRequest = { /* Modal during processing */ },
+        onDismissRequest = { /* Modal */ },
         properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp))
+                .clip(RoundedCornerShape(30.dp))
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color(0xFF111420), Color(0xFF090B10))
+                        colors = listOf(Color(0xE614161C), Color(0xF208090C))
                     )
                 )
                 .border(
                     1.dp,
-                    Brush.verticalGradient(listOf(Color(0x5538BDF8), Color(0x15FFFFFF))),
-                    RoundedCornerShape(28.dp)
+                    Brush.verticalGradient(listOf(Color(0x60FFFFFF), Color(0x14FFFFFF))),
+                    RoundedCornerShape(30.dp)
                 )
-                .padding(24.dp)
+                .padding(26.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // High-tech glowing spinner
+                // High-tech frosted glass aperture spinner
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier.size(80.dp)
@@ -97,8 +100,8 @@ fun ProcessingDialog(
                                 Brush.sweepGradient(
                                     listOf(
                                         Color.Transparent,
-                                        Color(0x3338BDF8),
-                                        Color(0xFF38BDF8),
+                                        Color(0x20FFFFFF),
+                                        Color(0x80FFFFFF),
                                         Color.White
                                     )
                                 ),
@@ -109,7 +112,7 @@ fun ProcessingDialog(
                     Icon(
                         imageVector = Icons.Default.AutoAwesome,
                         contentDescription = null,
-                        tint = IceCyan,
+                        tint = Color.White,
                         modifier = Modifier.size(28.dp)
                     )
                 }
@@ -127,28 +130,28 @@ fun ProcessingDialog(
 
                 Text(
                     text = currentStage.detail,
-                    color = MutedSlate,
+                    color = GlassTextMuted,
                     fontSize = 12.sp,
                     lineHeight = 16.sp
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Linear progress bar
+                // Progress Bar
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Шаг ${currentStage.step} из 5",
-                            color = MutedSlate,
+                            text = "Этап ${currentStage.step} из 5",
+                            color = GlassTextMuted,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
                             text = "${(progress * 100).toInt()}%",
-                            color = IceCyan,
+                            color = Color.White,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -162,14 +165,14 @@ fun ProcessingDialog(
                             .fillMaxWidth()
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
-                        color = IceCyan,
-                        trackColor = Color(0x22FFFFFF)
+                        color = Color.White,
+                        trackColor = Color(0x18FFFFFF)
                     )
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Pipeline steps mini list
+                // Steps list
                 Column(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -182,36 +185,36 @@ fun ProcessingDialog(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isCurrent) Color(0x1838BDF8) else Color.Transparent)
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (isCurrent) Color(0x20FFFFFF) else Color.Transparent)
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
                         ) {
                             if (isDone) {
                                 Icon(
                                     imageVector = Icons.Default.CheckCircle,
                                     contentDescription = null,
-                                    tint = Color(0xFF10B981),
-                                    modifier = Modifier.size(14.dp)
+                                    tint = Color.White,
+                                    modifier = Modifier.size(15.dp)
                                 )
                             } else if (isCurrent) {
                                 CircularProgressIndicator(
                                     strokeWidth = 2.dp,
-                                    color = IceCyan,
-                                    modifier = Modifier.size(14.dp)
+                                    color = Color.White,
+                                    modifier = Modifier.size(15.dp)
                                 )
                             } else {
                                 Box(
                                     modifier = Modifier
-                                        .size(14.dp)
+                                        .size(15.dp)
                                         .border(1.dp, Color(0x30FFFFFF), CircleShape)
                                 )
                             }
 
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(10.dp))
 
                             Text(
                                 text = stage.title,
-                                color = if (isCurrent) Color.White else if (isDone) IceSilver else MutedSlate.copy(alpha = 0.5f),
+                                color = if (isCurrent) Color.White else if (isDone) GlassTextSecondary else GlassTextMuted.copy(alpha = 0.5f),
                                 fontSize = 12.sp,
                                 fontWeight = if (isCurrent) FontWeight.SemiBold else FontWeight.Normal
                             )

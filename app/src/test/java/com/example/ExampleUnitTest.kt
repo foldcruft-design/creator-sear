@@ -37,7 +37,7 @@ class ExampleUnitTest {
     val presets = PresetType.values()
     assertTrue(presets.isNotEmpty())
     val ultra = PresetType.TIKTOK_ULTRA
-    assertEquals(75, ultra.defaultSharpness)
-    assertEquals(12, ultra.defaultShadowLift)
+    assertEquals(48, ultra.defaultSharpness)
+    assertEquals(10, ultra.defaultShadowLift)
   }
 }

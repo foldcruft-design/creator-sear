@@ -8,6 +8,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,12 +19,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -36,16 +36,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CloudUpload
-import androidx.compose.material.icons.filled.FolderSpecial
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayCircle
-import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.VideoFile
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -66,7 +63,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
-import com.example.data.local.ProjectEntity
 import com.example.data.local.UserEntity
 import com.example.data.repository.AuthRepository
 import com.example.data.repository.VideoProjectRepository
@@ -77,14 +73,16 @@ import com.example.domain.model.TikTokReadinessReport
 import com.example.domain.model.VideoItem
 import com.example.ui.components.AlgorithmTunerSheet
 import com.example.ui.components.GlassButton
-import com.example.ui.components.IceCyan
-import com.example.ui.components.IceSilver
-import com.example.ui.components.MutedSlate
 import com.example.ui.components.ProcessingDialog
 import com.example.ui.components.ResultExportSheet
 import com.example.ui.components.VideoComparisonPlayer
+import com.example.ui.theme.GlassObsidian
+import com.example.ui.theme.GlassTextMuted
+import com.example.ui.theme.GlassTextPrimary
+import com.example.ui.theme.GlassTextSecondary
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.io.File
 
 @Composable
 fun HomeScreen(
@@ -108,6 +106,8 @@ fun HomeScreen(
     var processingStage by remember { mutableStateOf(ProcessingStage.ANALYZING) }
     var processingProgress by remember { mutableFloatStateOf(0f) }
     var latestReport by remember { mutableStateOf<TikTokReadinessReport?>(null) }
+    var enhancedFile by remember { mutableStateOf<File?>(null) }
+    var savedGalleryPath by remember { mutableStateOf<String?>(null) }
 
     // Current settings
     var enhanceSettings by remember { mutableStateOf(EnhanceSettings()) }
@@ -142,7 +142,9 @@ fun HomeScreen(
                 isSample = false,
                 rawResId = null
             )
-            Toast.makeText(context, "Видео успешно загружено!", Toast.LENGTH_SHORT).show()
+            enhancedFile = null
+            savedGalleryPath = null
+            Toast.makeText(context, "Видео загружено", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -157,9 +159,9 @@ fun HomeScreen(
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF07090E),
-                        Color(0xFF0D1019),
-                        Color(0xFF111420)
+                        GlassObsidian,
+                        Color(0xFF090A0D),
+                        Color(0xFF0D0F14)
                     )
                 )
             )
@@ -169,7 +171,7 @@ fun HomeScreen(
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.statusBars)
         ) {
-            // Sleek frosted Top Bar
+            // Pure Frosted Top Bar
             TopBar(
                 user = currentUser,
                 onUserClick = {
@@ -181,7 +183,7 @@ fun HomeScreen(
                 }
             )
 
-            // Main Content Area based on Tab
+            // Content Area based on Tab
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -189,10 +191,11 @@ fun HomeScreen(
             ) {
                 when (currentTab) {
                     0 -> {
-                        // Optimizer Screen
                         OptimizerContent(
                             video = selectedVideo,
                             settings = enhanceSettings,
+                            enhancedFile = enhancedFile,
+                            savedGalleryPath = savedGalleryPath,
                             onSettingsChanged = { enhanceSettings = it },
                             onUploadClick = {
                                 videoPickerLauncher.launch(
@@ -201,9 +204,9 @@ fun HomeScreen(
                             },
                             onSelectDemo = { demoId ->
                                 val (resId, title) = if (demoId == 1) {
-                                    R.raw.sample_raw_clip to "Neon Night Aesthetic (Raw)"
+                                    R.raw.sample_raw_clip to "Neon Night Aesthetic"
                                 } else {
-                                    R.raw.sample_motion_clip to "Street Motion 60FPS (Raw)"
+                                    R.raw.sample_motion_clip to "Street Motion 60FPS"
                                 }
                                 selectedVideo = VideoItem(
                                     uri = Uri.parse("android.resource://${context.packageName}/$resId"),
@@ -214,42 +217,46 @@ fun HomeScreen(
                                     isSample = true,
                                     rawResId = resId
                                 )
+                                enhancedFile = null
+                                savedGalleryPath = null
                             },
                             onEnhanceClick = {
-                                // Start processing animation and computation
                                 showProcessingDialog = true
                                 processingProgress = 0.05f
                                 processingStage = ProcessingStage.ANALYZING
 
                                 scope.launch {
-                                    // Pipeline step 1: Analysis
-                                    delay(600)
+                                    delay(500)
                                     processingProgress = 0.25f
                                     processingStage = ProcessingStage.SHARPENING
 
-                                    // Pipeline step 2: Unsharp Mask
-                                    delay(750)
+                                    delay(650)
                                     processingProgress = 0.50f
                                     processingStage = ProcessingStage.DYNAMIC_RANGE
 
-                                    // Pipeline step 3: Dynamic range & shadow lifting
-                                    delay(650)
+                                    delay(600)
                                     processingProgress = 0.75f
                                     processingStage = ProcessingStage.COLOR_CALIBRATION
 
-                                    // Pipeline step 4: Rec.709
-                                    delay(650)
-                                    processingProgress = 0.92f
+                                    delay(550)
+                                    processingProgress = 0.90f
                                     processingStage = ProcessingStage.ENCODING
 
-                                    // Pipeline step 5: Sweet-spot Encoding & Save
-                                    delay(600)
+                                    // Real processing & file generation
+                                    val outFile = TikTokOptimizerEngine.processAndExportVideo(context, selectedVideo, enhanceSettings)
+                                    enhancedFile = outFile
+
                                     val report = TikTokOptimizerEngine.analyzeTikTokCompatibility(selectedVideo, enhanceSettings)
                                     latestReport = report
 
-                                    // Save project to Room DB
                                     currentUser?.id?.let { uid ->
-                                        projectRepository.saveProject(uid, selectedVideo, enhanceSettings, report)
+                                        projectRepository.saveProject(
+                                            userId = uid,
+                                            videoItem = selectedVideo,
+                                            settings = enhanceSettings,
+                                            report = report,
+                                            enhancedFilePath = outFile.absolutePath
+                                        )
                                         authRepository.onVideoEnhanced(14.5f)
                                     }
 
@@ -259,11 +266,21 @@ fun HomeScreen(
                                     showProcessingDialog = false
                                     showResultSheet = true
                                 }
+                            },
+                            onDirectDownload = {
+                                scope.launch {
+                                    val (uri, path) = projectRepository.exportVideoToGallery(selectedVideo, enhancedFile)
+                                    if (uri != null) {
+                                        savedGalleryPath = path ?: "Movies/TokEnhance"
+                                        Toast.makeText(context, "Видео сохранено в Галерею ($savedGalleryPath)!", Toast.LENGTH_LONG).show()
+                                    } else {
+                                        Toast.makeText(context, "Файл успешно экспортирован!", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
                             }
                         )
                     }
                     1 -> {
-                        // Projects History
                         ProjectsScreen(
                             projects = projects,
                             onSelectProject = { proj ->
@@ -271,7 +288,8 @@ fun HomeScreen(
                                     uri = Uri.parse(proj.originalUri),
                                     title = proj.title,
                                     resolution = proj.resolution,
-                                    originalBitrateMbps = proj.originalBitrateMbps
+                                    originalBitrateMbps = proj.originalBitrateMbps,
+                                    localFilePath = proj.enhancedUri
                                 )
                                 currentTab = 0
                             },
@@ -283,7 +301,6 @@ fun HomeScreen(
                         )
                     }
                     2 -> {
-                        // Profile Screen view
                         currentUser?.let { user ->
                             ProfileScreenContent(
                                 user = user,
@@ -303,7 +320,7 @@ fun HomeScreen(
                 }
             }
 
-            // Bottom Navigation Bar
+            // Pure Frosted Bottom Navigation Bar
             BottomNavigationBar(
                 currentTab = currentTab,
                 onTabSelected = { currentTab = it }
@@ -311,7 +328,6 @@ fun HomeScreen(
         }
     }
 
-    // Auth Dialog
     if (showAuthDialog) {
         AuthDialog(
             authRepository = authRepository,
@@ -320,7 +336,6 @@ fun HomeScreen(
         )
     }
 
-    // Profile Dialog
     if (showProfileDialog && currentUser != null) {
         ProfileDialog(
             user = currentUser!!,
@@ -333,7 +348,6 @@ fun HomeScreen(
         )
     }
 
-    // Processing Dialog
     if (showProcessingDialog) {
         ProcessingDialog(
             currentStage = processingStage,
@@ -342,18 +356,19 @@ fun HomeScreen(
         )
     }
 
-    // Result Sheet
     if (showResultSheet && latestReport != null) {
         ResultExportSheet(
             report = latestReport!!,
             settings = enhanceSettings,
+            savedPath = savedGalleryPath,
             onSaveToGallery = {
                 scope.launch {
-                    val uri = projectRepository.exportVideoToGallery(selectedVideo, enhanceSettings)
+                    val (uri, path) = projectRepository.exportVideoToGallery(selectedVideo, enhancedFile)
                     if (uri != null) {
-                        Toast.makeText(context, "Видео успешно сохранено в Галерею (Movies/TokEnhance)!", Toast.LENGTH_LONG).show()
+                        savedGalleryPath = path ?: "Movies/TokEnhance"
+                        Toast.makeText(context, "Видео успешно сохранено в Галерею ($savedGalleryPath)!", Toast.LENGTH_LONG).show()
                     } else {
-                        Toast.makeText(context, "Экспорт завершен!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Экспорт завершён!", Toast.LENGTH_SHORT).show()
                     }
                 }
             },
@@ -363,12 +378,12 @@ fun HomeScreen(
                         val shareIntent = Intent(Intent.ACTION_SEND).apply {
                             type = "video/*"
                             putExtra(Intent.EXTRA_STREAM, selectedVideo.uri)
-                            putExtra(Intent.EXTRA_TEXT, "Enhanced with TokEnhance Ultra Quality #tiktokquality #hdvideo")
+                            putExtra(Intent.EXTRA_TEXT, "Enhanced with TokEnhance 1080p 60fps #hdquality")
                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         }
-                        context.startActivity(Intent.createChooser(shareIntent, "Поделиться в TikTok"))
+                        context.startActivity(Intent.createChooser(shareIntent, "Поделиться видео"))
                     } catch (e: Exception) {
-                        Toast.makeText(context, "Отправка в TikTok...", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Открытие меню отправки...", Toast.LENGTH_SHORT).show()
                     }
                 }
             },
@@ -388,24 +403,24 @@ private fun TopBar(
             .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // App brand & logo
+        // App brand in pure frosted glass
         Box(
             modifier = Modifier
-                .size(38.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(0x2238BDF8))
-                .border(1.dp, Color(0x6638BDF8), RoundedCornerShape(12.dp)),
+                .size(40.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color(0x22FFFFFF))
+                .border(1.dp, Color(0x45FFFFFF), RoundedCornerShape(14.dp)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.Shield,
                 contentDescription = null,
-                tint = IceCyan,
+                tint = Color.White,
                 modifier = Modifier.size(20.dp)
             )
         }
 
-        Spacer(modifier = Modifier.width(10.dp))
+        Spacer(modifier = Modifier.width(12.dp))
 
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -418,13 +433,14 @@ private fun TopBar(
                 Spacer(modifier = Modifier.width(6.dp))
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Color(0x2A38BDF8))
-                        .padding(horizontal = 5.dp, vertical = 2.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0x25FFFFFF))
+                        .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = "ULTRA",
-                        color = IceCyan,
+                        text = "1080P PRO",
+                        color = Color.White,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -432,32 +448,28 @@ private fun TopBar(
             }
             Text(
                 text = "Anti-Compression Engine",
-                color = MutedSlate,
-                fontSize = 10.sp
+                color = GlassTextMuted,
+                fontSize = 11.sp
             )
         }
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // User profile pill
+        // Frosted User profile pill
         Box(
             modifier = Modifier
-                .clip(RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(22.dp))
                 .background(Color(0x18FFFFFF))
-                .border(1.dp, Color(0x28FFFFFF), RoundedCornerShape(20.dp))
+                .border(1.dp, Color(0x30FFFFFF), RoundedCornerShape(22.dp))
                 .clickable(onClick = onUserClick)
-                .padding(horizontal = 10.dp, vertical = 5.dp)
+                .padding(horizontal = 12.dp, vertical = 6.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
                         .size(22.dp)
                         .clip(CircleShape)
-                        .background(
-                            Brush.linearGradient(
-                                listOf(Color(0xFF0284C7), Color(0xFF38BDF8))
-                            )
-                        ),
+                        .background(Color(0x40FFFFFF)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -467,10 +479,10 @@ private fun TopBar(
                         fontWeight = FontWeight.Bold
                     )
                 }
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = user?.username?.take(12) ?: "Регистрация",
-                    color = IceSilver,
+                    color = Color.White,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -483,10 +495,13 @@ private fun TopBar(
 private fun OptimizerContent(
     video: VideoItem,
     settings: EnhanceSettings,
+    enhancedFile: File?,
+    savedGalleryPath: String?,
     onSettingsChanged: (EnhanceSettings) -> Unit,
     onUploadClick: () -> Unit,
     onSelectDemo: (Int) -> Unit,
-    onEnhanceClick: () -> Unit
+    onEnhanceClick: () -> Unit,
+    onDirectDownload: () -> Unit
 ) {
     val scrollState = rememberScrollState()
 
@@ -496,7 +511,7 @@ private fun OptimizerContent(
             .verticalScroll(scrollState)
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        // Upload Card & Quick Demo Selector
+        // Upload Card & Quick Demo Selector in pure glass
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -505,13 +520,13 @@ private fun OptimizerContent(
             Box(
                 modifier = Modifier
                     .weight(1.3f)
-                    .clip(RoundedCornerShape(18.dp))
+                    .clip(RoundedCornerShape(20.dp))
                     .background(
                         Brush.verticalGradient(
                             listOf(Color(0x28FFFFFF), Color(0x10FFFFFF))
                         )
                     )
-                    .border(1.dp, Color(0x35FFFFFF), RoundedCornerShape(18.dp))
+                    .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(20.dp))
                     .clickable(onClick = onUploadClick)
                     .padding(horizontal = 14.dp, vertical = 12.dp)
             ) {
@@ -519,7 +534,7 @@ private fun OptimizerContent(
                     Icon(
                         imageVector = Icons.Default.CloudUpload,
                         contentDescription = "Загрузить видео",
-                        tint = IceCyan,
+                        tint = Color.White,
                         modifier = Modifier.size(22.dp)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
@@ -532,20 +547,20 @@ private fun OptimizerContent(
                         )
                         Text(
                             text = "Из галереи (MP4/MOV)",
-                            color = MutedSlate,
+                            color = GlassTextMuted,
                             fontSize = 10.sp
                         )
                     }
                 }
             }
 
-            // Test Demo 1 button
+            // Demo 1
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(18.dp))
+                    .clip(RoundedCornerShape(20.dp))
                     .background(Color(0x14FFFFFF))
-                    .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(18.dp))
+                    .border(1.dp, Color(0x25FFFFFF), RoundedCornerShape(20.dp))
                     .clickable { onSelectDemo(1) }
                     .padding(horizontal = 10.dp, vertical = 12.dp)
             ) {
@@ -553,33 +568,33 @@ private fun OptimizerContent(
                     Icon(
                         imageVector = Icons.Default.PlayCircle,
                         contentDescription = null,
-                        tint = IceSilver,
+                        tint = Color.White,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Column {
                         Text(
-                            text = "Тест: Ночь",
-                            color = IceSilver,
+                            text = "Ночь",
+                            color = Color.White,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            text = "Neon 1080p",
-                            color = MutedSlate,
+                            text = "1080p Clip",
+                            color = GlassTextMuted,
                             fontSize = 9.sp
                         )
                     }
                 }
             }
 
-            // Test Demo 2 button
+            // Demo 2
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(18.dp))
+                    .clip(RoundedCornerShape(20.dp))
                     .background(Color(0x14FFFFFF))
-                    .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(18.dp))
+                    .border(1.dp, Color(0x25FFFFFF), RoundedCornerShape(20.dp))
                     .clickable { onSelectDemo(2) }
                     .padding(horizontal = 10.dp, vertical = 12.dp)
             ) {
@@ -587,20 +602,20 @@ private fun OptimizerContent(
                     Icon(
                         imageVector = Icons.Default.PlayCircle,
                         contentDescription = null,
-                        tint = IceSilver,
+                        tint = Color.White,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Column {
                         Text(
-                            text = "Тест: Движ",
-                            color = IceSilver,
+                            text = "Движение",
+                            color = Color.White,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            text = "Street 60FPS",
-                            color = MutedSlate,
+                            text = "60 FPS Clip",
+                            color = GlassTextMuted,
                             fontSize = 9.sp
                         )
                     }
@@ -623,9 +638,9 @@ private fun OptimizerContent(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color(0x10FFFFFF))
-                .border(1.dp, Color(0x1CFFFFFF), RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(18.dp))
+                .background(Color(0x12FFFFFF))
+                .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(18.dp))
                 .padding(horizontal = 16.dp, vertical = 10.dp)
         ) {
             Row(
@@ -635,13 +650,13 @@ private fun OptimizerContent(
                 Icon(
                     imageVector = Icons.Default.VideoFile,
                     contentDescription = null,
-                    tint = IceCyan,
+                    tint = Color.White,
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = video.title,
-                    color = IceSilver,
+                    color = Color.White,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
@@ -649,7 +664,7 @@ private fun OptimizerContent(
                 )
                 Text(
                     text = "9:16 Vertical",
-                    color = MutedSlate,
+                    color = GlassTextMuted,
                     fontSize = 11.sp
                 )
             }
@@ -657,14 +672,38 @@ private fun OptimizerContent(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Big Primary Action: Enhance for TikTok
+        // Primary Action: Optimize for TikTok
         GlassButton(
-            text = "УЛУЧШИТЬ ДЛЯ TIKTOK (ULTRA HD)",
+            text = "УЛУЧШИТЬ ДЛЯ TIKTOK (1080P 60FPS)",
             icon = Icons.Default.AutoAwesome,
             isPrimary = true,
             modifier = Modifier.fillMaxWidth(),
             onClick = onEnhanceClick
         )
+
+        // If enhanced, show immediate Download button right on the main screen
+        AnimatedVisibility(visible = enhancedFile != null) {
+            Column {
+                Spacer(modifier = Modifier.height(10.dp))
+                GlassButton(
+                    text = "Скачать улучшенное видео в Галерею",
+                    icon = Icons.Default.Download,
+                    isPrimary = false,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = onDirectDownload
+                )
+                if (savedGalleryPath != null) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Сохранено: $savedGalleryPath",
+                        color = Color.White,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    )
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -690,18 +729,18 @@ private fun ProfileScreenContent(
             .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         Box(
             modifier = Modifier
-                .size(72.dp)
+                .size(76.dp)
                 .clip(CircleShape)
                 .background(
-                    Brush.linearGradient(
-                        listOf(Color(0xFF0284C7), Color(0xFF38BDF8))
+                    Brush.verticalGradient(
+                        listOf(Color(0x40FFFFFF), Color(0x18FFFFFF))
                     )
                 )
-                .border(2.dp, Color(0x8038BDF8), CircleShape),
+                .border(2.dp, Color(0x80FFFFFF), CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -723,7 +762,7 @@ private fun ProfileScreenContent(
 
         Text(
             text = user.email,
-            color = MutedSlate,
+            color = GlassTextMuted,
             fontSize = 12.sp
         )
 
@@ -733,13 +772,13 @@ private fun ProfileScreenContent(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(22.dp))
                 .background(
                     Brush.verticalGradient(
-                        listOf(Color(0x2238BDF8), Color(0x0C38BDF8))
+                        listOf(Color(0x22FFFFFF), Color(0x0CFFFFFF))
                     )
                 )
-                .border(1.dp, Color(0x4438BDF8), RoundedCornerShape(20.dp))
+                .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(22.dp))
                 .padding(20.dp)
         ) {
             Column {
@@ -747,7 +786,7 @@ private fun ProfileScreenContent(
                     Icon(
                         imageVector = Icons.Default.Bolt,
                         contentDescription = null,
-                        tint = IceCyan,
+                        tint = Color.White,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -763,7 +802,7 @@ private fun ProfileScreenContent(
 
                 Text(
                     text = "Ваш профиль активирован. Алгоритмы автоматически подготавливают кодеки под алгоритмы TikTok, устраняя мыло и артефакты.",
-                    color = IceSilver.copy(alpha = 0.85f),
+                    color = GlassTextSecondary,
                     fontSize = 12.sp,
                     lineHeight = 16.sp
                 )
@@ -796,12 +835,12 @@ private fun BottomNavigationBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color(0xDD0C0F17))
+                .clip(RoundedCornerShape(26.dp))
+                .background(Color(0xD90E1015))
                 .border(
                     1.dp,
-                    Brush.verticalGradient(listOf(Color(0x35FFFFFF), Color(0x10FFFFFF))),
-                    RoundedCornerShape(24.dp)
+                    Brush.verticalGradient(listOf(Color(0x40FFFFFF), Color(0x10FFFFFF))),
+                    RoundedCornerShape(26.dp)
                 )
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceAround,
@@ -840,8 +879,13 @@ private fun NavTabItem(
 ) {
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(if (isSelected) Color(0x2838BDF8) else Color.Transparent)
+            .clip(RoundedCornerShape(18.dp))
+            .background(if (isSelected) Color(0x35FFFFFF) else Color.Transparent)
+            .border(
+                1.dp,
+                if (isSelected) Color(0x60FFFFFF) else Color.Transparent,
+                RoundedCornerShape(18.dp)
+            )
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
@@ -850,7 +894,7 @@ private fun NavTabItem(
             Icon(
                 imageVector = icon,
                 contentDescription = title,
-                tint = if (isSelected) IceCyan else MutedSlate,
+                tint = if (isSelected) Color.White else GlassTextMuted,
                 modifier = Modifier.size(18.dp)
             )
             if (isSelected) {

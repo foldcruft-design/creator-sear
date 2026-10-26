@@ -1,7 +1,6 @@
 package com.example.ui.theme
 
 import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -11,27 +10,27 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val GlassDarkColorScheme = darkColorScheme(
-    primary = AccentCyan,
-    onPrimary = Color.White,
-    primaryContainer = AccentCyanDark,
-    onPrimaryContainer = Color.White,
-    secondary = AccentSilver,
-    onSecondary = DarkObsidian,
-    background = DarkObsidian,
-    onBackground = AccentSilver,
-    surface = DarkSurface,
-    onSurface = AccentSilver,
-    surfaceVariant = DarkSurfaceElevated,
-    onSurfaceVariant = AccentMuted,
-    outline = AccentBorder
+private val PureGlassDarkColorScheme = darkColorScheme(
+    primary = GlassTextPrimary,
+    onPrimary = GlassObsidian,
+    primaryContainer = GlassSurfaceElevated,
+    onPrimaryContainer = GlassTextPrimary,
+    secondary = GlassTextSecondary,
+    onSecondary = GlassObsidian,
+    background = GlassObsidian,
+    onBackground = GlassTextPrimary,
+    surface = GlassSurface,
+    onSurface = GlassTextPrimary,
+    surfaceVariant = GlassSurfaceElevated,
+    onSurfaceVariant = GlassTextSecondary,
+    outline = GlassBorder
 )
 
 @Composable
 fun TokEnhanceTheme(
     content: @Composable () -> Unit
 ) {
-    val colorScheme = GlassDarkColorScheme
+    val colorScheme = PureGlassDarkColorScheme
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {

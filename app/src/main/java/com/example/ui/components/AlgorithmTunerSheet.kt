@@ -1,6 +1,5 @@
 package com.example.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,7 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Nightlight
 import androidx.compose.material.icons.filled.Speed
@@ -41,6 +39,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.domain.model.EnhanceSettings
 import com.example.domain.model.PresetType
+import com.example.ui.theme.GlassTextMuted
+import com.example.ui.theme.GlassTextPrimary
+import com.example.ui.theme.GlassTextSecondary
 import kotlin.math.roundToInt
 
 @Composable
@@ -52,18 +53,18 @@ fun AlgorithmTunerSheet(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(26.dp))
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(Color(0x1EFFFFFF), Color(0x0CFFFFFF))
+                    colors = listOf(Color(0x1CFFFFFF), Color(0x0AFFFFFF))
                 )
             )
             .border(
                 1.dp,
-                Brush.verticalGradient(listOf(Color(0x33FFFFFF), Color(0x10FFFFFF))),
-                RoundedCornerShape(24.dp)
+                Brush.verticalGradient(listOf(Color(0x35FFFFFF), Color(0x0CFFFFFF))),
+                RoundedCornerShape(26.dp)
             )
-            .padding(20.dp)
+            .padding(22.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -72,7 +73,7 @@ fun AlgorithmTunerSheet(
             Icon(
                 imageVector = Icons.Default.AutoAwesome,
                 contentDescription = null,
-                tint = IceCyan,
+                tint = Color.White,
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.width(10.dp))
@@ -86,8 +87,8 @@ fun AlgorithmTunerSheet(
 
         Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = "Специальная предварительная обработка компенсирует потери при конвертации серверами TikTok.",
-            color = MutedSlate,
+            text = "Адаптивное сохранение микро-текстур, динамический диапазон теней и битрейт 1080p 60fps.",
+            color = GlassTextMuted,
             fontSize = 12.sp,
             lineHeight = 16.sp
         )
@@ -96,8 +97,8 @@ fun AlgorithmTunerSheet(
 
         // Preset selector carousel
         Text(
-            text = "ПРЕСЕТ ОПТИМИЗАЦИИ",
-            color = IceSilver.copy(alpha = 0.6f),
+            text = "РЕЖИМ ОБРАБОТКИ",
+            color = GlassTextMuted,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 0.8.sp
@@ -121,12 +122,12 @@ fun AlgorithmTunerSheet(
 
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(if (isSelected) Color(0x3338BDF8) else Color(0x12FFFFFF))
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(if (isSelected) Color(0x35FFFFFF) else Color(0x10FFFFFF))
                         .border(
                             1.dp,
-                            if (isSelected) Color(0xFF38BDF8) else Color(0x22FFFFFF),
-                            RoundedCornerShape(14.dp)
+                            if (isSelected) Color(0x90FFFFFF) else Color(0x1EFFFFFF),
+                            RoundedCornerShape(16.dp)
                         )
                         .clickable {
                             onSettingsChanged(
@@ -146,13 +147,13 @@ fun AlgorithmTunerSheet(
                         Icon(
                             imageVector = icon,
                             contentDescription = null,
-                            tint = if (isSelected) IceCyan else MutedSlate,
+                            tint = if (isSelected) Color.White else GlassTextSecondary,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = preset.title,
-                            color = if (isSelected) Color.White else IceSilver,
+                            color = if (isSelected) Color.White else GlassTextSecondary,
                             fontSize = 12.sp,
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                         )
@@ -167,21 +168,22 @@ fun AlgorithmTunerSheet(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(0x0EFFFFFF))
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color(0x10FFFFFF))
+                .border(1.dp, Color(0x18FFFFFF), RoundedCornerShape(14.dp))
                 .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
             Text(
                 text = settings.preset.description,
-                color = IceSilver.copy(alpha = 0.85f),
+                color = GlassTextSecondary,
                 fontSize = 12.sp,
                 lineHeight = 16.sp
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
-        // Fine tuning sliders (Available on Custom or expanded)
+        // Sliders
         GlassSlider(
             value = settings.sharpness.toFloat(),
             onValueChange = {
@@ -192,12 +194,12 @@ fun AlgorithmTunerSheet(
                     )
                 )
             },
-            valueRange = 20f..100f,
-            title = "Микро-резкость (Unsharp Mask)",
+            valueRange = 10f..80f,
+            title = "Адаптивная резкость (без ореолов)",
             valueText = "${settings.sharpness}%"
         )
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         GlassSlider(
             value = settings.shadowLift.toFloat(),
@@ -209,12 +211,12 @@ fun AlgorithmTunerSheet(
                     )
                 )
             },
-            valueRange = 0f..40f,
+            valueRange = 0f..30f,
             title = "Защита теней от блочности (+IRE)",
             valueText = "+${settings.shadowLift}%"
         )
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         GlassSlider(
             value = settings.targetBitrateMbps,
@@ -226,33 +228,33 @@ fun AlgorithmTunerSheet(
                     )
                 )
             },
-            valueRange = 8f..18f,
+            valueRange = 10f..18f,
             title = "TikTok Bitrate Sweet-Spot",
             valueText = "${settings.targetBitrateMbps} Mbps"
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         // Anti-Banding toggle row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color(0x10FFFFFF))
-                .border(1.dp, Color(0x1AFFFFFF), RoundedCornerShape(16.dp))
+                .clip(RoundedCornerShape(18.dp))
+                .background(Color(0x12FFFFFF))
+                .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(18.dp))
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Anti-Banding (Устранение ступенек цвета)",
-                    color = IceSilver,
+                    text = "Anti-Banding (Устранение полос градиентов)",
+                    color = Color.White,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "Инъекция микро-дизеринга для идеальных градиентов",
-                    color = MutedSlate,
+                    text = "Микро-дизеринг для плавных градиентов в небе и темноте",
+                    color = GlassTextMuted,
                     fontSize = 11.sp
                 )
             }
@@ -268,8 +270,8 @@ fun AlgorithmTunerSheet(
                 },
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = Color.White,
-                    checkedTrackColor = IceCyan,
-                    uncheckedThumbColor = MutedSlate,
+                    checkedTrackColor = Color(0x80FFFFFF),
+                    uncheckedThumbColor = GlassTextMuted,
                     uncheckedTrackColor = Color(0x20FFFFFF)
                 )
             )

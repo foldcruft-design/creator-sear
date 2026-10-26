@@ -1,6 +1,5 @@
 package com.example.ui.components
 
-import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
 import android.view.SurfaceHolder
@@ -20,7 +19,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -59,6 +57,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.domain.model.EnhanceSettings
 import com.example.domain.model.VideoItem
+import com.example.ui.theme.GlassBorder
+import com.example.ui.theme.GlassTextMuted
+import com.example.ui.theme.GlassTextPrimary
+import com.example.ui.theme.GlassTextSecondary
+import java.io.File
 import kotlin.math.roundToInt
 
 @Composable
@@ -74,11 +77,13 @@ fun VideoComparisonPlayer(
     var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
     var showControls by remember { mutableStateOf(true) }
 
-    DisposableEffect(videoItem.uri) {
+    DisposableEffect(videoItem.uri, videoItem.localFilePath) {
         val player = MediaPlayer().apply {
             isLooping = true
             try {
-                if (videoItem.rawResId != null) {
+                if (videoItem.localFilePath != null && File(videoItem.localFilePath).exists()) {
+                    setDataSource(videoItem.localFilePath)
+                } else if (videoItem.rawResId != null) {
                     val afd = context.resources.openRawResourceFd(videoItem.rawResId)
                     if (afd != null) {
                         setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
@@ -138,28 +143,23 @@ fun VideoComparisonPlayer(
         modifier = modifier
             .fillMaxWidth()
             .aspectRatio(9f / 16f)
-            .clip(RoundedCornerShape(24.dp))
-            .background(Color(0xFF06070A))
+            .clip(RoundedCornerShape(26.dp))
+            .background(Color(0xFF050608))
             .border(
                 1.dp,
-                Brush.verticalGradient(listOf(Color(0x35FFFFFF), Color(0x10FFFFFF))),
-                RoundedCornerShape(24.dp)
+                Brush.verticalGradient(listOf(Color(0x40FFFFFF), Color(0x10FFFFFF))),
+                RoundedCornerShape(26.dp)
             )
             .pointerInput(Unit) {
                 detectTapGestures(
-                    onTap = {
-                        showControls = !showControls
-                    },
-                    onDoubleTap = {
-                        isPlaying = !isPlaying
-                    }
+                    onTap = { showControls = !showControls },
+                    onDoubleTap = { isPlaying = !isPlaying }
                 )
             }
     ) {
         val widthPx = constraints.maxWidth.toFloat()
-        val heightPx = constraints.maxHeight.toFloat()
 
-        // SurfaceView holding the real media playback
+        // Real video rendering surface
         AndroidView(
             factory = { ctx ->
                 SurfaceView(ctx).apply {
@@ -179,23 +179,7 @@ fun VideoComparisonPlayer(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Overlay 1: Simulated compression degradation on the Left (TikTok low-bitrate artifacts)
-        Box(
-            modifier = Modifier
-                .fillMaxHeight()
-                .fillMaxWidth(fraction = splitFraction)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0x33000000), // Shadow compression
-                            Color(0x1A000000),
-                            Color(0x28000000)
-                        )
-                    )
-                )
-        )
-
-        // Overlay 2: Enhanced Ultra clarity & Rec.709 vibrancy on the Right (TokEnhance Ultra)
+        // Subtle dynamic contrast refinement on the Right (Optimized preview side)
         Box(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
@@ -204,19 +188,19 @@ fun VideoComparisonPlayer(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color(0x1238BDF8), // Subtle vibrant Rec.709 glow
-                            Color(0x05FFFFFF),
-                            Color(0x1538BDF8)
+                            Color(0x08FFFFFF),
+                            Color(0x02FFFFFF),
+                            Color(0x08FFFFFF)
                         )
                     )
                 )
         )
 
         val density = LocalDensity.current
-        val dividerThicknessPx = with(density) { 1.dp.toPx() }
+        val dividerThicknessPx = with(density) { 1.5.dp.toPx() }
         val handleRadiusPx = with(density) { 18.dp.toPx() }
 
-        // Split Divider line with interactive touch drag
+        // Draggable glass divider line
         val dividerOffsetX = (splitFraction * widthPx) - dividerThicknessPx
         Box(
             modifier = Modifier
@@ -226,23 +210,23 @@ fun VideoComparisonPlayer(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color(0x8038BDF8),
+                            Color(0x20FFFFFF),
                             Color.White,
-                            Color(0x8038BDF8)
+                            Color(0x20FFFFFF)
                         )
                     )
                 )
         )
 
-        // Central Drag Handle on the divider
+        // Monochromatic frosted handle
         Box(
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .offset { IntOffset((dividerOffsetX - handleRadiusPx).roundToInt(), 0) }
                 .size(36.dp)
                 .clip(CircleShape)
-                .background(Color(0xDD0F172A))
-                .border(1.5.dp, Color(0xFF38BDF8), CircleShape)
+                .background(Color(0xE6101217))
+                .border(1.5.dp, Color(0x90FFFFFF), CircleShape)
                 .pointerInput(widthPx) {
                     detectDragGestures { change, dragAmount ->
                         change.consume()
@@ -255,12 +239,12 @@ fun VideoComparisonPlayer(
             Icon(
                 imageVector = Icons.Rounded.Compare,
                 contentDescription = "Сравнить До/После",
-                tint = Color(0xFF38BDF8),
+                tint = Color.White,
                 modifier = Modifier.size(20.dp)
             )
         }
 
-        // Header comparison badges
+        // Pure Frosted Badges (Left = Исходник, Right = Crystal 1080p)
         Row(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -268,17 +252,16 @@ fun VideoComparisonPlayer(
                 .padding(horizontal = 14.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left badge: ДО (Обычный TikTok)
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xB3000000))
-                    .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(12.dp))
-                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0x99000000))
+                    .border(1.dp, Color(0x35FFFFFF), RoundedCornerShape(14.dp))
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = "ДО • TikTok сжатие",
-                    color = Color(0xFFCBD5E1),
+                    text = "ДО • ИСХОДНИК",
+                    color = GlassTextSecondary,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -286,16 +269,15 @@ fun VideoComparisonPlayer(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Right badge: ПОСЛЕ (TokEnhance Ultra)
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xCC0369A1))
-                    .border(1.dp, Color(0x8038BDF8), RoundedCornerShape(12.dp))
-                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0x99181A22))
+                    .border(1.dp, Color(0x80FFFFFF), RoundedCornerShape(14.dp))
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = "ПОСЛЕ • Ultra 1080p",
+                    text = "ПОСЛЕ • 1080P 60FPS",
                     color = Color.White,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold
@@ -303,7 +285,7 @@ fun VideoComparisonPlayer(
             }
         }
 
-        // Play/Pause & Audio Mute controls on bottom
+        // Play/Pause & Mute Bar in pure frosted glass
         AnimatedVisibility(
             visible = showControls,
             enter = fadeIn(),
@@ -316,20 +298,20 @@ fun VideoComparisonPlayer(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(Color(0xB3090B12))
-                    .border(1.dp, Color(0x28FFFFFF), RoundedCornerShape(18.dp))
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color(0xCC080A0E))
+                    .border(1.dp, Color(0x2EFFFFFF), RoundedCornerShape(20.dp))
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
                     onClick = { isPlaying = !isPlaying },
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(38.dp)
                 ) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                         contentDescription = if (isPlaying) "Пауза" else "Воспроизведение",
-                        tint = IceCyan,
+                        tint = Color.White,
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -338,12 +320,12 @@ fun VideoComparisonPlayer(
 
                 IconButton(
                     onClick = { isMuted = !isMuted },
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(38.dp)
                 ) {
                     Icon(
                         imageVector = if (isMuted) Icons.Default.VolumeMute else Icons.Default.VolumeUp,
                         contentDescription = if (isMuted) "Включить звук" else "Выключить звук",
-                        tint = IceSilver,
+                        tint = GlassTextSecondary,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -352,7 +334,7 @@ fun VideoComparisonPlayer(
 
                 Text(
                     text = "${(splitFraction * 100).roundToInt()}% До / ${(100 - (splitFraction * 100)).roundToInt()}% После",
-                    color = MutedSlate,
+                    color = GlassTextMuted,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 )
