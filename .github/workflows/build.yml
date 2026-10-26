@@ -33,11 +33,15 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'gradle'
+
+      - name: Setup Gradle Environment
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+          cache-read-only: false
 
       - name: Accept Android SDK Licenses
         run: |
-          # Use pre-installed Android SDK licenses on ubuntu-latest runner
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
 
       - name: Prepare Environment & Keystore
