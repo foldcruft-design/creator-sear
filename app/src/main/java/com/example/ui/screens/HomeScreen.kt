@@ -1,19 +1,15 @@
 package com.example.ui.screens
 
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -41,20 +37,19 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.rounded.AutoFixHigh
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.FileDownload
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -73,7 +68,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -82,10 +79,13 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.local.UserEntity
 import com.example.data.repository.AuthRepository
+import com.example.data.repository.SettingsRepository
 import com.example.data.repository.VideoProjectRepository
 import com.example.domain.engine.TikTokOptimizerEngine
+import com.example.domain.model.AppLanguage
+import com.example.domain.model.AppStrings
 import com.example.domain.model.EnhanceSettings
-import com.example.domain.model.PresetType
+import com.example.domain.model.FAQItemText
 import com.example.domain.model.ProcessingStage
 import com.example.domain.model.TikTokReadinessReport
 import com.example.domain.model.VideoItem
@@ -94,25 +94,34 @@ import com.example.ui.components.ProcessingDialog
 import com.example.ui.components.ResultExportSheet
 import com.example.ui.theme.GlassObsidian
 import com.example.ui.theme.GlassTextMuted
-import com.example.ui.theme.GlassTextPrimary
 import com.example.ui.theme.GlassTextSecondary
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
-data class FAQItemData(val question: String, val answer: String)
-
 @Composable
 fun HomeScreen(
     authRepository: AuthRepository,
-    projectRepository: VideoProjectRepository
+    projectRepository: VideoProjectRepository,
+    settingsRepository: SettingsRepository? = null
 ) {
     val context = LocalContext.current
+    val activeSettingsRepo = remember(settingsRepository) {
+        settingsRepository ?: SettingsRepository(context)
+    }
     val scope = rememberCoroutineScope()
     val currentUser by authRepository.currentUser.collectAsState()
+    val currentLanguage by activeSettingsRepo.language.collectAsState()
+    val enhanceSettings by activeSettingsRepo.settings.collectAsState()
 
-    // Nav tabs: 0 = Optimizer, 1 = Projects, 2 = Profile
+    val strings = remember(currentLanguage) { AppStrings(currentLanguage) }
+
+    // Nav tabs: 0 = Optimizer, 1 = Projects, 2 = Settings, 3 = Profile
     var currentTab by remember { mutableIntStateOf(0) }
+
+    BackHandler(enabled = currentTab != 0) {
+        currentTab = 0
+    }
 
     // Dialogs state
     var showAuthDialog by remember { mutableStateOf(false) }
@@ -127,42 +136,26 @@ fun HomeScreen(
     var enhancedFile by remember { mutableStateOf<File?>(null) }
     var savedGalleryPath by remember { mutableStateOf<String?>(null) }
 
-    // Settings & Engine Preset (Zeta 1 LITE, Zeta 2 BEST, Zeta 3 HDR)
-    var selectedEngineTier by remember { mutableIntStateOf(1) } // 0=Lite, 1=Best, 2=HDR
-    var isHandBrakeFilterOn by remember { mutableStateOf(false) }
-
-    var enhanceSettings by remember {
-        mutableStateOf(
-            EnhanceSettings(
-                preset = PresetType.TIKTOK_ULTRA,
-                sharpness = 48,
-                shadowLift = 10,
-                targetBitrateMbps = 14.2f,
-                targetFps = 60
-            )
-        )
-    }
-
     var selectedVideo by remember { mutableStateOf<VideoItem?>(null) }
 
-    // Video Picker launcher
+    // Video Picker launcher with real MediaMetadataRetriever inspection
     val videoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
         if (uri != null) {
-            val fileName = uri.lastPathSegment?.substringAfterLast('/') ?: "custom_video.mp4"
-            selectedVideo = VideoItem(
-                uri = uri,
-                title = fileName,
-                durationMs = 8000L,
-                resolution = "1080 × 1920",
-                originalBitrateMbps = 4.2f,
-                isSample = false,
-                rawResId = null
-            )
-            enhancedFile = null
-            savedGalleryPath = null
-            Toast.makeText(context, "Видео выбрано для оптимизации", Toast.LENGTH_SHORT).show()
+            scope.launch {
+                val fallbackName = uri.lastPathSegment?.substringAfterLast('/') ?: "custom_video.mp4"
+                val analyzedVideo = TikTokOptimizerEngine.extractVideoMetadata(
+                    context = context,
+                    uri = uri,
+                    rawResId = null,
+                    fallbackTitle = fallbackName
+                )
+                selectedVideo = analyzedVideo
+                enhancedFile = null
+                savedGalleryPath = null
+                Toast.makeText(context, strings.videoSelectedToast, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -189,9 +182,15 @@ fun HomeScreen(
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.statusBars)
         ) {
-            // Sleek Top Bar with compact, responsive profile button
+            // Sleek Top Bar with compact language toggle and profile button
             TopBar(
                 user = currentUser,
+                strings = strings,
+                currentLanguage = currentLanguage,
+                onLanguageToggle = {
+                    val next = if (currentLanguage == AppLanguage.RU) AppLanguage.EN else AppLanguage.RU
+                    activeSettingsRepo.setLanguage(next)
+                },
                 onUserClick = {
                     if (currentUser == null || currentUser?.passwordHash.isNullOrEmpty()) {
                         showAuthDialog = true
@@ -210,83 +209,67 @@ fun HomeScreen(
                 when (currentTab) {
                     0 -> {
                         OptimizerZilemContent(
+                            strings = strings,
                             selectedVideo = selectedVideo,
-                            selectedEngineTier = selectedEngineTier,
-                            isHandBrakeFilterOn = isHandBrakeFilterOn,
+                            settings = enhanceSettings,
                             enhancedFile = enhancedFile,
                             savedGalleryPath = savedGalleryPath,
-                            onEngineTierSelected = { tier ->
-                                selectedEngineTier = tier
-                                enhanceSettings = when (tier) {
-                                    0 -> enhanceSettings.copy(sharpness = 35, shadowLift = 6, targetBitrateMbps = 11.5f)
-                                    1 -> enhanceSettings.copy(sharpness = 48, shadowLift = 10, targetBitrateMbps = 14.2f)
-                                    else -> enhanceSettings.copy(sharpness = 58, shadowLift = 18, targetBitrateMbps = 16.0f)
-                                }
+                            onVfrToggle = { enabled ->
+                                activeSettingsRepo.updateSettings(
+                                    enhanceSettings.copy(vfrToCfrStabilizer = enabled)
+                                )
                             },
-                            onHandBrakeToggle = { isHandBrakeFilterOn = it },
+                            onOpenSettingsTab = { currentTab = 2 },
                             onUploadClick = {
                                 videoPickerLauncher.launch(
                                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)
                                 )
                             },
-                            onRemoveVideo = {
-                                selectedVideo = null
-                                enhancedFile = null
-                                savedGalleryPath = null
-                            },
                             onSelectDemoVideo = {
-                                selectedVideo = VideoItem(
-                                    uri = Uri.parse("android.resource://${context.packageName}/${R.raw.sample_raw_clip}"),
-                                    title = "sample_raw_clip.mp4",
-                                    durationMs = 4000L,
-                                    resolution = "1080 × 1920",
-                                    originalBitrateMbps = 2.0f,
-                                    isSample = true,
-                                    rawResId = R.raw.sample_raw_clip
-                                )
-                                enhancedFile = null
-                                savedGalleryPath = null
+                                scope.launch {
+                                    val demoUri = Uri.parse("android.resource://${context.packageName}/${R.raw.sample_raw_clip}")
+                                    val analyzed = TikTokOptimizerEngine.extractVideoMetadata(
+                                        context = context,
+                                        uri = demoUri,
+                                        rawResId = R.raw.sample_raw_clip,
+                                        fallbackTitle = "sample_raw_clip.mp4"
+                                    )
+                                    selectedVideo = analyzed
+                                    enhancedFile = null
+                                    savedGalleryPath = null
+                                }
                             },
                             onPatchClick = {
-                                val videoToProcess = selectedVideo ?: VideoItem(
-                                    uri = Uri.parse("android.resource://${context.packageName}/${R.raw.sample_raw_clip}"),
-                                    title = "sample_raw_clip.mp4",
-                                    durationMs = 4000L,
-                                    resolution = "1080 × 1920",
-                                    originalBitrateMbps = 2.0f,
-                                    isSample = true,
-                                    rawResId = R.raw.sample_raw_clip
-                                ).also { selectedVideo = it }
-
-                                showProcessingDialog = true
-                                processingProgress = 0.05f
-                                processingStage = ProcessingStage.ANALYZING
-
                                 scope.launch {
-                                    delay(500)
-                                    processingProgress = 0.25f
-                                    processingStage = ProcessingStage.SHARPENING
+                                    val videoToProcess = selectedVideo ?: run {
+                                        val demoUri = Uri.parse("android.resource://${context.packageName}/${R.raw.sample_raw_clip}")
+                                        TikTokOptimizerEngine.extractVideoMetadata(
+                                            context = context,
+                                            uri = demoUri,
+                                            rawResId = R.raw.sample_raw_clip,
+                                            fallbackTitle = "sample_raw_clip.mp4"
+                                        ).also { selectedVideo = it }
+                                    }
 
-                                    delay(650)
-                                    processingProgress = 0.50f
-                                    processingStage = ProcessingStage.DYNAMIC_RANGE
-
-                                    delay(600)
-                                    processingProgress = 0.75f
-                                    processingStage = ProcessingStage.COLOR_CALIBRATION
-
-                                    delay(550)
-                                    processingProgress = 0.90f
-                                    processingStage = ProcessingStage.ENCODING
+                                    showProcessingDialog = true
+                                    processingProgress = 0.08f
+                                    processingStage = ProcessingStage.ANALYZING
 
                                     val outFile = TikTokOptimizerEngine.processAndExportVideo(
-                                        context,
-                                        videoToProcess,
-                                        enhanceSettings
+                                        context = context,
+                                        video = videoToProcess,
+                                        settings = enhanceSettings,
+                                        onStageProgress = { stage, prog ->
+                                            processingStage = stage
+                                            processingProgress = prog
+                                        }
                                     )
                                     enhancedFile = outFile
 
-                                    val report = TikTokOptimizerEngine.analyzeTikTokCompatibility(videoToProcess, enhanceSettings)
+                                    val report = TikTokOptimizerEngine.analyzeTikTokCompatibility(
+                                        video = videoToProcess,
+                                        settings = enhanceSettings
+                                    )
                                     latestReport = report
 
                                     currentUser?.id?.let { uid ->
@@ -300,9 +283,14 @@ fun HomeScreen(
                                         authRepository.onVideoEnhanced(14.5f)
                                     }
 
-                                    processingProgress = 1.0f
-                                    processingStage = ProcessingStage.COMPLETED
-                                    delay(300)
+                                    if (enhanceSettings.autoSaveToGallery) {
+                                        val (uri, path) = projectRepository.exportVideoToGallery(videoToProcess, outFile)
+                                        if (uri != null) {
+                                            savedGalleryPath = path ?: "Movies/TokEnhance"
+                                        }
+                                    }
+
+                                    delay(220)
                                     showProcessingDialog = false
                                     showResultSheet = true
                                 }
@@ -313,10 +301,27 @@ fun HomeScreen(
                                     val (uri, path) = projectRepository.exportVideoToGallery(currentVid, enhancedFile)
                                     if (uri != null) {
                                         savedGalleryPath = path ?: "Movies/TokEnhance"
-                                        Toast.makeText(context, "Видео сохранено в Галерею ($savedGalleryPath)!", Toast.LENGTH_LONG).show()
+                                        Toast.makeText(
+                                            context,
+                                            "${strings.savedToastPrefix} $savedGalleryPath",
+                                            Toast.LENGTH_LONG
+                                        ).show()
                                     } else {
-                                        Toast.makeText(context, "Экспорт завершён!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, strings.exportDoneToast, Toast.LENGTH_SHORT).show()
                                     }
+                                }
+                            },
+                            onShareVideo = {
+                                val currentVid = selectedVideo ?: return@OptimizerZilemContent
+                                try {
+                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "video/*"
+                                        putExtra(Intent.EXTRA_STREAM, currentVid.uri)
+                                        putExtra(Intent.EXTRA_TEXT, "Optimized with TokEnhance (${enhanceSettings.targetResolution} ${enhanceSettings.targetFps}fps)")
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    context.startActivity(Intent.createChooser(shareIntent, strings.shareVideoBtn))
+                                } catch (_: Exception) {
                                 }
                             }
                         )
@@ -324,14 +329,17 @@ fun HomeScreen(
                     1 -> {
                         ProjectsScreen(
                             projects = projects,
+                            strings = strings,
                             onSelectProject = { proj ->
                                 selectedVideo = VideoItem(
                                     uri = Uri.parse(proj.originalUri),
                                     title = proj.title,
                                     resolution = proj.resolution,
                                     originalBitrateMbps = proj.originalBitrateMbps,
+                                    fps = proj.fps,
                                     localFilePath = proj.enhancedUri
                                 )
+                                enhancedFile = proj.enhancedUri.takeIf { it.isNotBlank() }?.let { File(it) }
                                 currentTab = 0
                             },
                             onDeleteProject = { id ->
@@ -342,9 +350,26 @@ fun HomeScreen(
                         )
                     }
                     2 -> {
+                        SettingsScreen(
+                            strings = strings,
+                            currentLanguage = currentLanguage,
+                            settings = enhanceSettings,
+                            onLanguageChange = { lang ->
+                                activeSettingsRepo.setLanguage(lang)
+                            },
+                            onSettingsChange = { updated ->
+                                activeSettingsRepo.updateSettings(updated)
+                            },
+                            onResetDefaults = {
+                                activeSettingsRepo.resetToDefaults()
+                            }
+                        )
+                    }
+                    3 -> {
                         currentUser?.let { user ->
                             ProfileScreenContent(
                                 user = user,
+                                strings = strings,
                                 onAuthAction = {
                                     if (user.passwordHash.isEmpty()) {
                                         showAuthDialog = true
@@ -361,8 +386,9 @@ fun HomeScreen(
                 }
             }
 
-            // Sleek Floating Bottom Bar
+            // Sleek Floating Bottom Bar with 4 Tabs
             BottomNavigationBar(
+                strings = strings,
                 currentTab = currentTab,
                 onTabSelected = { currentTab = it }
             )
@@ -372,6 +398,7 @@ fun HomeScreen(
     if (showAuthDialog) {
         AuthDialog(
             authRepository = authRepository,
+            strings = strings,
             onSuccess = { showAuthDialog = false },
             onDismiss = { showAuthDialog = false }
         )
@@ -381,6 +408,7 @@ fun HomeScreen(
         ProfileDialog(
             user = currentUser!!,
             authRepository = authRepository,
+            strings = strings,
             onSignOutOrSwitch = {
                 showProfileDialog = false
                 showAuthDialog = true
@@ -393,6 +421,7 @@ fun HomeScreen(
         ProcessingDialog(
             currentStage = processingStage,
             progress = processingProgress,
+            strings = strings,
             onDismissRequest = { /* Modal */ }
         )
     }
@@ -402,14 +431,19 @@ fun HomeScreen(
             report = latestReport!!,
             settings = enhanceSettings,
             savedPath = savedGalleryPath,
+            strings = strings,
             onSaveToGallery = {
                 scope.launch {
                     val (uri, path) = projectRepository.exportVideoToGallery(selectedVideo!!, enhancedFile)
                     if (uri != null) {
                         savedGalleryPath = path ?: "Movies/TokEnhance"
-                        Toast.makeText(context, "Видео сохранено в Галерею ($savedGalleryPath)!", Toast.LENGTH_LONG).show()
+                        Toast.makeText(
+                            context,
+                            "${strings.savedToastPrefix} $savedGalleryPath",
+                            Toast.LENGTH_LONG
+                        ).show()
                     } else {
-                        Toast.makeText(context, "Экспорт завершён!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, strings.exportDoneToast, Toast.LENGTH_SHORT).show()
                     }
                 }
             },
@@ -422,9 +456,8 @@ fun HomeScreen(
                             putExtra(Intent.EXTRA_TEXT, "Enhanced with TokEnhance 1080p 60fps #hdquality")
                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         }
-                        context.startActivity(Intent.createChooser(shareIntent, "Поделиться видео"))
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "Открытие меню отправки...", Toast.LENGTH_SHORT).show()
+                        context.startActivity(Intent.createChooser(shareIntent, strings.shareVideoBtn))
+                    } catch (_: Exception) {
                     }
                 }
             },
@@ -436,6 +469,9 @@ fun HomeScreen(
 @Composable
 private fun TopBar(
     user: UserEntity?,
+    strings: AppStrings,
+    currentLanguage: AppLanguage,
+    onLanguageToggle: () -> Unit,
     onUserClick: () -> Unit
 ) {
     Row(
@@ -468,13 +504,45 @@ private fun TopBar(
             Spacer(modifier = Modifier.width(10.dp))
 
             Text(
-                text = "TokEnhance",
+                text = strings.appTitle,
                 color = Color.White,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1
             )
         }
+
+        // Quick Language Switch Pill (RU / EN)
+        Box(
+            modifier = Modifier
+                .height(34.dp)
+                .clip(RoundedCornerShape(17.dp))
+                .background(Color(0x16FFFFFF))
+                .border(1.dp, Color(0x2EFFFFFF), RoundedCornerShape(17.dp))
+                .clickable(onClick = onLanguageToggle)
+                .padding(horizontal = 10.dp)
+                .testTag("topbar_language_toggle"),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Language,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(14.dp)
+                )
+                Spacer(modifier = Modifier.width(5.dp))
+                Text(
+                    text = currentLanguage.code.uppercase(),
+                    color = Color.White,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
 
         // Compact, single-line, perfectly scaled Profile Pill
         Box(
@@ -484,7 +552,8 @@ private fun TopBar(
                 .background(Color(0x18FFFFFF))
                 .border(1.dp, Color(0x30FFFFFF), RoundedCornerShape(17.dp))
                 .clickable(onClick = onUserClick)
-                .padding(horizontal = 12.dp),
+                .padding(horizontal = 12.dp)
+                .testTag("topbar_profile_button"),
             contentAlignment = Alignment.Center
         ) {
             Row(
@@ -498,7 +567,7 @@ private fun TopBar(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 val displayName = if (user == null || user.passwordHash.isEmpty()) {
-                    "Аккаунт"
+                    strings.accountGuestLabel
                 } else {
                     user.username
                 }
@@ -517,54 +586,24 @@ private fun TopBar(
 
 @Composable
 private fun OptimizerZilemContent(
+    strings: AppStrings,
     selectedVideo: VideoItem?,
-    selectedEngineTier: Int,
-    isHandBrakeFilterOn: Boolean,
+    settings: EnhanceSettings,
     enhancedFile: File?,
     savedGalleryPath: String?,
-    onEngineTierSelected: (Int) -> Unit,
-    onHandBrakeToggle: (Boolean) -> Unit,
+    onVfrToggle: (Boolean) -> Unit,
+    onOpenSettingsTab: () -> Unit,
     onUploadClick: () -> Unit,
-    onRemoveVideo: () -> Unit,
     onSelectDemoVideo: () -> Unit,
     onPatchClick: () -> Unit,
-    onDownloadToGallery: () -> Unit
+    onDownloadToGallery: () -> Unit,
+    onShareVideo: () -> Unit
 ) {
     val scrollState = rememberScrollState()
-
-    val faqItems = remember {
-        listOf(
-            FAQItemData(
-                question = "What does the patcher actually do?",
-                answer = "It restructures the MP4 container and GOP stream to 1080x1920 60fps closed GOP, calibrates the Rec.709 color matrix, and applies adaptive edge pre-emphasis. TikTok and Reels compression servers recognize this profile as sweet-spot passthrough, avoiding aggressive downsampling."
-            ),
-            FAQItemData(
-                question = "What file formats are supported?",
-                answer = "All standard MP4, MOV, and WebM video formats exported from smartphones, CapCut, Premiere Pro, DaVinci Resolve, or After Effects."
-            ),
-            FAQItemData(
-                question = "How do I save the patched video?",
-                answer = "Once you tap 'Patch with Ultra', the video is optimized instantly on your device. You can then tap 'Download to Gallery' to save it directly into your phone's Movies/TokEnhance album."
-            ),
-            FAQItemData(
-                question = "My video lags on TikTok — will HandBrake fix it?",
-                answer = "Yes. When videos have Variable Frame Rate (VFR) or oversized bitrates (>20 Mbps), TikTok drops frames during playback. The Pre-Encode patch normalizes the video stream to constant 60 FPS with 320kbps AAC audio."
-            ),
-            FAQItemData(
-                question = "How long does processing take?",
-                answer = "Processing is fully hardware-accelerated on-device and takes only 2 to 4 seconds without any server wait queue."
-            ),
-            FAQItemData(
-                question = "Which files does Ultra 2 accept?",
-                answer = "Any video resolution up to 4K 60FPS. The engine scales and optimizes the video to the native vertical 9:16 aspect ratio."
-            )
-        )
-    }
 
     BoxWithConstraints(
         modifier = Modifier.fillMaxSize()
     ) {
-        val maxWidth = maxWidth
         val isWideScreen = maxWidth > 600.dp
         val horizontalPadding = if (isWideScreen) 32.dp else 16.dp
 
@@ -575,20 +614,19 @@ private fun OptimizerZilemContent(
                 .padding(horizontal = horizontalPadding, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Constrain inner width for responsive look across foldables & tablets
             Column(
                 modifier = Modifier
                     .widthIn(max = 520.dp)
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                // Hero Title (Exact typography from Screenshot 1)
+                // Hero Title
                 Text(
-                    text = "Optimize a video",
+                    text = strings.heroTitle,
                     color = Color.White,
-                    fontSize = 32.sp,
+                    fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-0.5).sp,
                     textAlign = TextAlign.Center
@@ -597,17 +635,17 @@ private fun OptimizerZilemContent(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "MP4 & MOV · any codec — patched on-device with Ultra 2. The default engine, and the one that works with the most exports. Orion is used.",
+                    text = strings.heroSubtitle,
                     color = GlassTextMuted,
                     fontSize = 13.sp,
                     lineHeight = 18.sp,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 12.dp)
+                    modifier = Modifier.padding(horizontal = 10.dp)
                 )
 
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                // The Central Glass Optimizer Card (Zilem Style)
+                // The Central Glass Optimizer Card (Clean, no Ultra 1/2/3 clutter, no paid badges)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -619,7 +657,7 @@ private fun OptimizerZilemContent(
                         )
                         .border(
                             1.dp,
-                            Brush.verticalGradient(listOf(Color(0x35FFFFFF), Color(0x0CFFFFFF))),
+                            Brush.verticalGradient(listOf(Color(0x38FFFFFF), Color(0x0CFFFFFF))),
                             RoundedCornerShape(26.dp)
                         )
                         .padding(18.dp)
@@ -627,56 +665,63 @@ private fun OptimizerZilemContent(
                     Column(
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        // Engine Tier Pills: Zeta 1 LITE, Zeta 2 BEST, Zeta 3 HDR
+                        // Active Pipeline Summary Row (Quick jump to Settings tab)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color(0x10FFFFFF))
-                                .padding(4.dp),
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(Color(0x12FFFFFF))
+                                .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(14.dp))
+                                .clickable(onClick = onOpenSettingsTab)
+                                .padding(horizontal = 12.dp, vertical = 9.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            EngineTierButton(
-                                title = "Ultra 1",
-                                badge = "LITE",
-                                isSelected = selectedEngineTier == 0,
-                                onClick = { onEngineTierSelected(0) },
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.weight(1f)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            EngineTierButton(
-                                title = "Ultra 2",
-                                badge = "BEST",
-                                isSelected = selectedEngineTier == 1,
-                                onClick = { onEngineTierSelected(1) },
-                                modifier = Modifier.weight(1f)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            EngineTierButton(
-                                title = "Ultra 3",
-                                badge = "HDR",
-                                isSelected = selectedEngineTier == 2,
-                                onClick = { onEngineTierSelected(2) },
-                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Tune,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(15.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "${settings.targetResolution} · ${settings.targetFps} FPS · ${settings.targetBitrateMbps} Mbps · +${settings.sharpness}%",
+                                    color = Color.White,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = strings.customizeInSettings,
+                                color = GlassTextSecondary,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(18.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                        // HandBrake Pre-Filter Switch Row
+                        // VFR & Bitrate Stabilizer Switch Row (Free Core Engine, no paid badges)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(18.dp))
                                 .background(Color(0x0DFFFFFF))
-                                .border(1.dp, Color(0x18FFFFFF), RoundedCornerShape(18.dp))
+                                .border(1.dp, Color(0x1AFFFFFF), RoundedCornerShape(18.dp))
                                 .padding(horizontal = 14.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = "Pre-Filter Patch",
+                                        text = strings.preFilterTitle,
                                         color = Color.White,
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.SemiBold
@@ -685,12 +730,12 @@ private fun OptimizerZilemContent(
                                     Box(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(6.dp))
-                                            .background(Color(0x22FFFFFF))
+                                            .background(Color(0x20FFFFFF))
                                             .border(1.dp, Color(0x35FFFFFF), RoundedCornerShape(6.dp))
-                                            .padding(horizontal = 5.dp, vertical = 1.dp)
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
                                     ) {
                                         Text(
-                                            text = "PLUS · PREMIUM",
+                                            text = strings.preFilterBadge,
                                             color = Color.White,
                                             fontSize = 9.sp,
                                             fontWeight = FontWeight.Bold
@@ -699,7 +744,7 @@ private fun OptimizerZilemContent(
                                 }
                                 Spacer(modifier = Modifier.height(3.dp))
                                 Text(
-                                    text = "Turn this on if video hasn't been compressed yet. Normalizes GOP to prevent TikTok lag.",
+                                    text = strings.preFilterDesc,
                                     color = GlassTextMuted,
                                     fontSize = 11.sp,
                                     lineHeight = 14.sp
@@ -707,8 +752,8 @@ private fun OptimizerZilemContent(
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Switch(
-                                checked = isHandBrakeFilterOn,
-                                onCheckedChange = onHandBrakeToggle,
+                                checked = settings.vfrToCfrStabilizer,
+                                onCheckedChange = onVfrToggle,
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = Color.White,
                                     checkedTrackColor = Color(0x80FFFFFF),
@@ -718,7 +763,7 @@ private fun OptimizerZilemContent(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(18.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         // Large "Drop your video here" Zone
                         Box(
@@ -732,17 +777,17 @@ private fun OptimizerZilemContent(
                                     RoundedCornerShape(20.dp)
                                 )
                                 .clickable(onClick = onUploadClick)
-                                .padding(vertical = 36.dp, horizontal = 20.dp),
+                                .padding(vertical = 34.dp, horizontal = 20.dp)
+                                .testTag("drop_video_zone"),
                             contentAlignment = Alignment.Center
                         ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 if (selectedVideo != null) {
-                                    // Loaded video view
                                     Box(
                                         modifier = Modifier
-                                            .size(54.dp)
+                                            .size(56.dp)
                                             .clip(CircleShape)
                                             .background(Color(0x28FFFFFF))
                                             .border(1.dp, Color(0x60FFFFFF), CircleShape),
@@ -766,18 +811,17 @@ private fun OptimizerZilemContent(
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "Tap to choose a different video",
+                                        text = strings.tapToChangeVideo,
                                         color = GlassTextMuted,
                                         fontSize = 12.sp
                                     )
                                 } else {
-                                    // Empty Drop Zone (Exact style of Screenshot 1)
                                     Box(
                                         modifier = Modifier
-                                            .size(56.dp)
+                                            .size(58.dp)
                                             .clip(CircleShape)
-                                            .background(Color(0x14FFFFFF))
-                                            .border(1.dp, Color(0x30FFFFFF), CircleShape),
+                                            .background(Color(0x16FFFFFF))
+                                            .border(1.dp, Color(0x35FFFFFF), CircleShape),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
@@ -791,7 +835,7 @@ private fun OptimizerZilemContent(
                                     Spacer(modifier = Modifier.height(14.dp))
 
                                     Text(
-                                        text = "Drop your video here",
+                                        text = strings.dropVideoHere,
                                         color = Color.White,
                                         fontSize = 17.sp,
                                         fontWeight = FontWeight.Bold
@@ -800,7 +844,7 @@ private fun OptimizerZilemContent(
                                     Spacer(modifier = Modifier.height(4.dp))
 
                                     Text(
-                                        text = "or click to browse · MP4 & MOV",
+                                        text = strings.clickToBrowse,
                                         color = GlassTextMuted,
                                         fontSize = 12.sp
                                     )
@@ -820,7 +864,7 @@ private fun OptimizerZilemContent(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Или загрузить демо-видео для теста →",
+                                    text = "${strings.loadDemoVideoLink} →",
                                     color = GlassTextSecondary,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Medium
@@ -828,7 +872,7 @@ private fun OptimizerZilemContent(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(18.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         // Live Metadata 5 Specs Row (SIZE, RESOLUTION, DURATION, CODEC, HEALTH)
                         Row(
@@ -836,86 +880,167 @@ private fun OptimizerZilemContent(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             SpecPill(
-                                label = "SIZE",
-                                value = if (selectedVideo != null) "14.2 MB" else "—",
+                                label = strings.specSize,
+                                value = selectedVideo?.formattedSize ?: "—",
                                 modifier = Modifier.weight(1f)
                             )
                             SpecPill(
-                                label = "RESOLUTION",
-                                value = if (selectedVideo != null) "1080×1920" else "—",
+                                label = strings.specResolution,
+                                value = selectedVideo?.resolution?.replace(" ", "") ?: "—",
                                 modifier = Modifier.weight(1f)
                             )
                             SpecPill(
-                                label = "DURATION",
-                                value = if (selectedVideo != null) "00:04" else "—",
+                                label = strings.specDuration,
+                                value = selectedVideo?.formattedDuration ?: "—",
                                 modifier = Modifier.weight(1f)
                             )
                             SpecPill(
-                                label = "CODEC",
-                                value = if (selectedVideo != null) "H.264" else "—",
+                                label = strings.specCodec,
+                                value = selectedVideo?.codec ?: "—",
                                 modifier = Modifier.weight(1f)
                             )
                             SpecPill(
-                                label = "HEALTH",
-                                value = if (selectedVideo != null) "99%" else "—",
+                                label = strings.specHealth,
+                                value = if (selectedVideo != null) "${selectedVideo.healthPercent}%" else "—",
                                 modifier = Modifier.weight(1f)
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(18.dp))
 
-                        // Big Action Button: "Patch with Ultra 2"
-                        val tierName = when (selectedEngineTier) {
-                            0 -> "Ultra 1"
-                            1 -> "Ultra 2"
-                            else -> "Ultra 3"
-                        }
+                        // Primary Optimize Button with vector icon (no emojis)
                         GlassButton(
-                            text = "▶  Patch with $tierName",
+                            text = strings.optimizeButtonText,
+                            icon = Icons.Rounded.AutoFixHigh,
                             isPrimary = true,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("optimize_video_button"),
                             onClick = onPatchClick
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = "Patched on-device via $tierName Engine · Direct Stream",
+                            text = strings.engineCaption,
                             color = GlassTextMuted,
                             fontSize = 11.sp,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()
                         )
 
-                        // If video was patched, show direct Download button
+                        // Bottom Download Panel with proper vector Download Icon
                         AnimatedVisibility(visible = enhancedFile != null) {
                             Column {
-                                Spacer(modifier = Modifier.height(14.dp))
-                                GlassButton(
-                                    text = "💾  Скачать в Галерею (Movies/TokEnhance)",
-                                    isPrimary = false,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    onClick = onDownloadToGallery
-                                )
-                                if (savedGalleryPath != null) {
-                                    Spacer(modifier = Modifier.height(6.dp))
-                                    Text(
-                                        text = "Сохранено: $savedGalleryPath",
-                                        color = Color.White,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(
+                                            Brush.verticalGradient(
+                                                colors = listOf(Color(0x24FFFFFF), Color(0x10FFFFFF))
+                                            )
+                                        )
+                                        .border(
+                                            1.dp,
+                                            Brush.verticalGradient(listOf(Color(0x50FFFFFF), Color(0x18FFFFFF))),
+                                            RoundedCornerShape(20.dp)
+                                        )
+                                        .padding(14.dp)
+                                ) {
+                                    Column(modifier = Modifier.fillMaxWidth()) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(38.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color(0x28FFFFFF))
+                                                    .border(1.dp, Color(0x60FFFFFF), CircleShape),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.CheckCircle,
+                                                    contentDescription = null,
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.width(10.dp))
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = strings.readyToDownloadTitle,
+                                                    color = Color.White,
+                                                    fontSize = 13.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Text(
+                                                    text = "${settings.targetResolution} · ${settings.targetFps} FPS · Rec.709",
+                                                    color = GlassTextSecondary,
+                                                    fontSize = 11.sp
+                                                )
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.height(12.dp))
+
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            GlassButton(
+                                                text = strings.downloadToGalleryBtn,
+                                                icon = Icons.Rounded.Download,
+                                                isPrimary = true,
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .testTag("download_video_button"),
+                                                onClick = onDownloadToGallery
+                                            )
+
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(52.dp)
+                                                    .clip(RoundedCornerShape(18.dp))
+                                                    .background(Color(0x1AFFFFFF))
+                                                    .border(1.dp, Color(0x38FFFFFF), RoundedCornerShape(18.dp))
+                                                    .clickable(onClick = onShareVideo),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Share,
+                                                    contentDescription = strings.shareVideoBtn,
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+                                        }
+
+                                        if (savedGalleryPath != null) {
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            Text(
+                                                text = "${strings.savedInLabel} $savedGalleryPath",
+                                                color = Color.White,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                textAlign = TextAlign.Center,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(48.dp))
+                Spacer(modifier = Modifier.height(42.dp))
 
-                // FAQ / Questions Answered Section (Screenshot 1)
+                // FAQ / Questions Answered Section
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
@@ -924,7 +1049,7 @@ private fun OptimizerZilemContent(
                         .padding(horizontal = 14.dp, vertical = 5.dp)
                 ) {
                     Text(
-                        text = "Help",
+                        text = strings.helpBadge,
                         color = Color.White,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold
@@ -934,28 +1059,28 @@ private fun OptimizerZilemContent(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
-                    text = "QUESTIONS, ANSWERED.",
+                    text = strings.faqHeader,
                     color = Color.White,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
                 // Expandable Accordions
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    faqItems.forEach { item ->
+                    strings.faqList.forEach { item ->
                         FAQAccordion(item = item)
                     }
                 }
 
-                Spacer(modifier = Modifier.height(48.dp))
+                Spacer(modifier = Modifier.height(42.dp))
 
-                // Sleek Footer (Exact style from Screenshot 1)
+                // Sleek Footer
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -967,11 +1092,11 @@ private fun OptimizerZilemContent(
                                 .background(Color(0x1AFFFFFF))
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
-                            Text(text = "v3.5", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            Text(text = "v4.0", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "TokEnhance Ultra 3.5",
+                            text = "TokEnhance Engine",
                             color = Color.White,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold
@@ -981,64 +1106,25 @@ private fun OptimizerZilemContent(
                     Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
-                        text = "Video quality tools for creators.",
+                        text = strings.footerSubtitle,
                         color = GlassTextMuted,
                         fontSize = 11.sp
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceAround
                     ) {
-                        Text(text = "60fps upload guide", color = GlassTextSecondary, fontSize = 11.sp)
-                        Text(text = "Why is my video blurry?", color = GlassTextSecondary, fontSize = 11.sp)
-                        Text(text = "Direct stream ready", color = GlassTextSecondary, fontSize = 11.sp)
+                        Text(text = strings.footerTag1, color = GlassTextSecondary, fontSize = 11.sp)
+                        Text(text = strings.footerTag2, color = GlassTextSecondary, fontSize = 11.sp)
+                        Text(text = strings.footerTag3, color = GlassTextSecondary, fontSize = 11.sp)
                     }
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(28.dp))
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun EngineTierButton(
-    title: String,
-    badge: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(if (isSelected) Color(0x35FFFFFF) else Color.Transparent)
-            .border(
-                1.dp,
-                if (isSelected) Color(0x75FFFFFF) else Color.Transparent,
-                RoundedCornerShape(12.dp)
-            )
-            .clickable(onClick = onClick)
-            .padding(vertical = 8.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = title,
-                color = if (isSelected) Color.White else GlassTextMuted,
-                fontSize = 12.sp,
-                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = badge,
-                color = if (isSelected) Color.White else GlassTextMuted.copy(alpha = 0.6f),
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Bold
-            )
         }
     }
 }
@@ -1063,10 +1149,11 @@ private fun SpecPill(
             Text(
                 text = label,
                 color = GlassTextMuted,
-                fontSize = 9.sp,
+                fontSize = 8.sp,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 0.5.sp,
-                maxLines = 1
+                letterSpacing = 0.4.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
@@ -1082,7 +1169,7 @@ private fun SpecPill(
 }
 
 @Composable
-private fun FAQAccordion(item: FAQItemData) {
+private fun FAQAccordion(item: FAQItemText) {
     var expanded by remember { mutableStateOf(false) }
     val rotation by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
@@ -1137,6 +1224,7 @@ private fun FAQAccordion(item: FAQItemData) {
 @Composable
 private fun ProfileScreenContent(
     user: UserEntity,
+    strings: AppStrings,
     onAuthAction: () -> Unit
 ) {
     Column(
@@ -1182,9 +1270,26 @@ private fun ProfileScreenContent(
             fontSize = 12.sp
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-        // Pro perks card
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color(0x1EFFFFFF))
+                .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(16.dp))
+                .padding(horizontal = 12.dp, vertical = 5.dp)
+        ) {
+            Text(
+                text = strings.freeCreatorBadge,
+                color = Color.White,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+
+        Spacer(modifier = Modifier.height(22.dp))
+
+        // Engine Active Card (Free, no subscription walls)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1207,7 +1312,7 @@ private fun ProfileScreenContent(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "TikTok Anti-Compression Pass",
+                        text = strings.profilePassTitle,
                         color = Color.White,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold
@@ -1217,7 +1322,7 @@ private fun ProfileScreenContent(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
-                    text = "Ваш профиль активирован. Алгоритмы автоматически подготавливают кодеки под алгоритмы TikTok, устраняя мыло и артефакты.",
+                    text = strings.profilePassDesc,
                     color = GlassTextSecondary,
                     fontSize = 12.sp,
                     lineHeight = 16.sp
@@ -1228,7 +1333,7 @@ private fun ProfileScreenContent(
         Spacer(modifier = Modifier.height(24.dp))
 
         GlassButton(
-            text = if (user.passwordHash.isEmpty()) "Зарегистрировать аккаунт" else "Выйти / Сменить аккаунт",
+            text = if (user.passwordHash.isEmpty()) strings.registerAccountBtn else strings.switchAccountBtn,
             icon = Icons.Default.Person,
             isPrimary = user.passwordHash.isEmpty(),
             modifier = Modifier.fillMaxWidth(),
@@ -1239,6 +1344,7 @@ private fun ProfileScreenContent(
 
 @Composable
 private fun BottomNavigationBar(
+    strings: AppStrings,
     currentTab: Int,
     onTabSelected: (Int) -> Unit
 ) {
@@ -1246,7 +1352,7 @@ private fun BottomNavigationBar(
         modifier = Modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.navigationBars)
-            .padding(horizontal = 24.dp, vertical = 12.dp)
+            .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
         Row(
             modifier = Modifier
@@ -1258,29 +1364,40 @@ private fun BottomNavigationBar(
                     Brush.verticalGradient(listOf(Color(0x40FFFFFF), Color(0x10FFFFFF))),
                     RoundedCornerShape(26.dp)
                 )
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
             NavTabItem(
-                title = "Оптимизация",
+                title = strings.tabOptimize,
                 icon = Icons.Default.AutoAwesome,
                 isSelected = currentTab == 0,
+                testTag = "nav_tab_optimize",
                 onClick = { onTabSelected(0) }
             )
 
             NavTabItem(
-                title = "Проекты",
+                title = strings.tabProjects,
                 icon = Icons.Default.History,
                 isSelected = currentTab == 1,
+                testTag = "nav_tab_projects",
                 onClick = { onTabSelected(1) }
             )
 
             NavTabItem(
-                title = "Профиль",
-                icon = Icons.Default.Person,
+                title = strings.tabSettings,
+                icon = Icons.Default.Tune,
                 isSelected = currentTab == 2,
+                testTag = "nav_tab_settings",
                 onClick = { onTabSelected(2) }
+            )
+
+            NavTabItem(
+                title = strings.tabProfile,
+                icon = Icons.Default.Person,
+                isSelected = currentTab == 3,
+                testTag = "nav_tab_profile",
+                onClick = { onTabSelected(3) }
             )
         }
     }
@@ -1289,8 +1406,9 @@ private fun BottomNavigationBar(
 @Composable
 private fun NavTabItem(
     title: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     isSelected: Boolean,
+    testTag: String,
     onClick: () -> Unit
 ) {
     Box(
@@ -1303,7 +1421,8 @@ private fun NavTabItem(
                 RoundedCornerShape(18.dp)
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .testTag(testTag),
         contentAlignment = Alignment.Center
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1319,7 +1438,8 @@ private fun NavTabItem(
                     text = title,
                     color = Color.White,
                     fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1
                 )
             }
         }

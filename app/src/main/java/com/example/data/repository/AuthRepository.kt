@@ -44,11 +44,11 @@ class AuthRepository(context: Context) {
         if (guest == null) {
             guest = UserEntity(
                 id = guestId,
-                username = "Creator (Гость)",
-                email = "guest@tokenhance.ai",
+                username = "Creator",
+                email = "creator@tokenhance.app",
                 passwordHash = "",
                 avatarIndex = 0,
-                tier = "TikTok Pro Trial",
+                tier = "Creator · Free",
                 videosEnhancedCount = 0,
                 bandwidthSavedMb = 0f
             )
@@ -63,18 +63,18 @@ class AuthRepository(context: Context) {
         val trimmedEmail = email.trim().lowercase()
         val trimmedUser = username.trim()
         if (trimmedEmail.isEmpty() || !trimmedEmail.contains("@")) {
-            return Result.failure(IllegalArgumentException("Введите корректный email адрес"))
+            return Result.failure(IllegalArgumentException("Введите корректный email адрес / Enter valid email"))
         }
         if (trimmedUser.length < 2) {
-            return Result.failure(IllegalArgumentException("Имя пользователя слишком короткое"))
+            return Result.failure(IllegalArgumentException("Имя пользователя слишком короткое / Username too short"))
         }
         if (password.length < 4) {
-            return Result.failure(IllegalArgumentException("Пароль должен быть не менее 4 символов"))
+            return Result.failure(IllegalArgumentException("Пароль от 4 символов / Password min 4 chars"))
         }
 
         val existing = userDao.getUserByEmail(trimmedEmail)
         if (existing != null && existing.passwordHash.isNotEmpty()) {
-            return Result.failure(IllegalArgumentException("Пользователь с таким email уже существует"))
+            return Result.failure(IllegalArgumentException("Email уже зарегистрирован / Email already exists"))
         }
 
         val hash = hashPassword(password)
@@ -84,7 +84,7 @@ class AuthRepository(context: Context) {
             email = trimmedEmail,
             passwordHash = hash,
             avatarIndex = (trimmedUser.hashCode() % 5 + 5) % 5,
-            tier = "TikTok Ultra Master",
+            tier = "Creator · All Features Unlocked",
             videosEnhancedCount = 0,
             bandwidthSavedMb = 0f
         )

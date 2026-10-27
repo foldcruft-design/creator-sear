@@ -1,7 +1,12 @@
 package com.example
 
+import android.content.Context
 import android.net.Uri
+import androidx.test.core.app.ApplicationProvider
+import com.example.data.repository.SettingsRepository
 import com.example.domain.engine.TikTokOptimizerEngine
+import com.example.domain.model.AppLanguage
+import com.example.domain.model.AppStrings
 import com.example.domain.model.EnhanceSettings
 import com.example.domain.model.PresetType
 import com.example.domain.model.VideoItem
@@ -39,5 +44,23 @@ class ExampleUnitTest {
     val ultra = PresetType.TIKTOK_ULTRA
     assertEquals(48, ultra.defaultSharpness)
     assertEquals(10, ultra.defaultShadowLift)
+  }
+
+  @Test
+  fun testLanguageSwitchingAndSettingsPersistence() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    val repo = SettingsRepository(context)
+
+    repo.setLanguage(AppLanguage.EN)
+    assertEquals(AppLanguage.EN, repo.language.value)
+    val enStrings = AppStrings(repo.language.value)
+    assertEquals("Settings", enStrings.tabSettings)
+    assertEquals("Download Video to Gallery", enStrings.downloadToGalleryBtn)
+
+    repo.setLanguage(AppLanguage.RU)
+    assertEquals(AppLanguage.RU, repo.language.value)
+    val ruStrings = AppStrings(repo.language.value)
+    assertEquals("Настройки", ruStrings.tabSettings)
+    assertEquals("Скачать видео в Галерею", ruStrings.downloadToGalleryBtn)
   }
 }

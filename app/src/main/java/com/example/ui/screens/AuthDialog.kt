@@ -37,20 +37,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.data.repository.AuthRepository
+import com.example.domain.model.AppLanguage
+import com.example.domain.model.AppStrings
 import com.example.ui.components.GlassButton
 import com.example.ui.components.GlassTextField
 import com.example.ui.theme.GlassTextMuted
-import com.example.ui.theme.GlassTextPrimary
-import com.example.ui.theme.GlassTextSecondary
 import kotlinx.coroutines.launch
 
 @Composable
 fun AuthDialog(
     authRepository: AuthRepository,
+    strings: AppStrings = AppStrings(AppLanguage.RU),
     onSuccess: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -103,7 +105,7 @@ fun AuthDialog(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
-                    text = if (isSignUp) "Регистрация Creator" else "Вход в TokEnhance",
+                    text = if (isSignUp) strings.signUpHeader else strings.signInHeader,
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
@@ -112,11 +114,11 @@ fun AuthDialog(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "Сохраняйте проекты и экспортируйте видео без потери качества",
+                    text = strings.authSub,
                     color = GlassTextMuted,
                     fontSize = 12.sp,
                     lineHeight = 16.sp,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    textAlign = TextAlign.Center
                 )
 
                 Spacer(modifier = Modifier.height(18.dp))
@@ -142,7 +144,7 @@ fun AuthDialog(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Регистрация",
+                            text = strings.tabSignUp,
                             color = if (isSignUp) Color.White else GlassTextMuted,
                             fontSize = 13.sp,
                             fontWeight = if (isSignUp) FontWeight.SemiBold else FontWeight.Normal
@@ -162,7 +164,7 @@ fun AuthDialog(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Вход",
+                            text = strings.tabSignIn,
                             color = if (!isSignUp) Color.White else GlassTextMuted,
                             fontSize = 13.sp,
                             fontWeight = if (!isSignUp) FontWeight.SemiBold else FontWeight.Normal
@@ -180,7 +182,7 @@ fun AuthDialog(
                             username = it
                             errorMessage = null
                         },
-                        placeholder = "Имя автора / Никнейм",
+                        placeholder = strings.placeholderUsername,
                         leadingIcon = Icons.Default.Person
                     )
                     Spacer(modifier = Modifier.height(10.dp))
@@ -192,7 +194,7 @@ fun AuthDialog(
                         email = it
                         errorMessage = null
                     },
-                    placeholder = "Email (creator@tok.io)",
+                    placeholder = strings.placeholderEmail,
                     leadingIcon = Icons.Default.Email,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                 )
@@ -205,7 +207,7 @@ fun AuthDialog(
                         password = it
                         errorMessage = null
                     },
-                    placeholder = "Пароль (от 4 символов)",
+                    placeholder = strings.placeholderPassword,
                     leadingIcon = Icons.Default.Lock,
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
@@ -240,7 +242,7 @@ fun AuthDialog(
                     )
                 } else {
                     GlassButton(
-                        text = if (isSignUp) "Создать аккаунт" else "Войти",
+                        text = if (isSignUp) strings.submitSignUp else strings.submitSignIn,
                         isPrimary = true,
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
@@ -256,7 +258,7 @@ fun AuthDialog(
                                 if (result.isSuccess) {
                                     onSuccess()
                                 } else {
-                                    errorMessage = result.exceptionOrNull()?.message ?: "Ошибка авторизации"
+                                    errorMessage = result.exceptionOrNull()?.message ?: "Auth error"
                                 }
                             }
                         }
@@ -276,7 +278,7 @@ fun AuthDialog(
                         .padding(vertical = 8.dp)
                 ) {
                     Text(
-                        text = "Продолжить без регистрации",
+                        text = strings.continueGuest,
                         color = GlassTextMuted,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium

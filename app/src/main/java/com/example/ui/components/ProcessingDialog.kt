@@ -36,19 +36,22 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.domain.model.AppLanguage
+import com.example.domain.model.AppStrings
 import com.example.domain.model.ProcessingStage
 import com.example.ui.theme.GlassTextMuted
-import com.example.ui.theme.GlassTextPrimary
 import com.example.ui.theme.GlassTextSecondary
 
 @Composable
 fun ProcessingDialog(
     currentStage: ProcessingStage,
     progress: Float,
+    strings: AppStrings = AppStrings(AppLanguage.RU),
     onDismissRequest: () -> Unit
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "glass_spin")
@@ -120,19 +123,21 @@ fun ProcessingDialog(
                 Spacer(modifier = Modifier.height(18.dp))
 
                 Text(
-                    text = currentStage.title,
+                    text = strings.stageTitle(currentStage),
                     color = Color.White,
                     fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = currentStage.detail,
+                    text = strings.stageDetail(currentStage),
                     color = GlassTextMuted,
                     fontSize = 12.sp,
-                    lineHeight = 16.sp
+                    lineHeight = 16.sp,
+                    textAlign = TextAlign.Center
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -144,7 +149,7 @@ fun ProcessingDialog(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Этап ${currentStage.step} из 5",
+                            text = strings.stepOfTotal(currentStage.step.coerceAtMost(5)),
                             color = GlassTextMuted,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium
@@ -213,7 +218,7 @@ fun ProcessingDialog(
                             Spacer(modifier = Modifier.width(10.dp))
 
                             Text(
-                                text = stage.title,
+                                text = strings.stageTitle(stage),
                                 color = if (isCurrent) Color.White else if (isDone) GlassTextSecondary else GlassTextMuted.copy(alpha = 0.5f),
                                 fontSize = 12.sp,
                                 fontWeight = if (isCurrent) FontWeight.SemiBold else FontWeight.Normal

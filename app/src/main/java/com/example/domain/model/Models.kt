@@ -18,7 +18,7 @@ enum class PresetType(
         defaultShadowLift = 10,
         defaultAntiBanding = true,
         defaultVibrance = 12,
-        defaultBitrateMbps = 14.2f
+        defaultBitrateMbps = 14.5f
     ),
     NIGHT_AESTHETIC(
         title = "Ночной Aesthetic",
@@ -48,23 +48,27 @@ enum class PresetType(
         defaultBitrateMbps = 15.5f
     ),
     CUSTOM(
-        title = "Ручной PRO",
+        title = "Ручной режим",
         description = "Точная калибровка резкости, кривой теней и битрейта под конкретное видео.",
         defaultSharpness = 48,
         defaultShadowLift = 10,
         defaultAntiBanding = true,
         defaultVibrance = 12,
-        defaultBitrateMbps = 14.2f
+        defaultBitrateMbps = 14.5f
     )
 }
 
 data class EnhanceSettings(
     val preset: PresetType = PresetType.TIKTOK_ULTRA,
-    val sharpness: Int = PresetType.TIKTOK_ULTRA.defaultSharpness,
-    val shadowLift: Int = PresetType.TIKTOK_ULTRA.defaultShadowLift,
-    val antiBanding: Boolean = PresetType.TIKTOK_ULTRA.defaultAntiBanding,
-    val vibrance: Int = PresetType.TIKTOK_ULTRA.defaultVibrance,
-    val targetBitrateMbps: Float = PresetType.TIKTOK_ULTRA.defaultBitrateMbps,
+    val sharpness: Int = 48,
+    val shadowLift: Int = 10,
+    val antiBanding: Boolean = true,
+    val sensorDenoise: Boolean = true,
+    val rec709ColorMatrix: Boolean = true,
+    val vfrToCfrStabilizer: Boolean = true,
+    val autoSaveToGallery: Boolean = false,
+    val vibrance: Int = 12,
+    val targetBitrateMbps: Float = 14.5f,
     val targetFps: Int = 60,
     val targetResolution: String = "1080 × 1920"
 )
@@ -74,11 +78,26 @@ data class VideoItem(
     val title: String,
     val durationMs: Long = 4000L,
     val resolution: String = "1080 × 1920",
-    val originalBitrateMbps: Float = 3.2f,
+    val originalBitrateMbps: Float = 4.2f,
+    val fileSizeMb: Float = 8.4f,
+    val codec: String = "H.264",
+    val fps: Int = 60,
+    val healthPercent: Int = 99,
     val isSample: Boolean = false,
     val rawResId: Int? = null,
     val localFilePath: String? = null
-)
+) {
+    val formattedSize: String
+        get() = String.format(java.util.Locale.US, "%.1f MB", fileSizeMb)
+
+    val formattedDuration: String
+        get() {
+            val totalSeconds = (durationMs / 1000L).coerceAtLeast(1L)
+            val mins = totalSeconds / 60
+            val secs = totalSeconds % 60
+            return String.format(java.util.Locale.US, "%02d:%02d", mins, secs)
+        }
+}
 
 enum class ProcessingStage(val step: Int, val title: String, val detail: String) {
     ANALYZING(1, "Анализ структуры потока", "Проверка цветовой субдискретизации, GOP-структуры и битрейта..."),
@@ -98,5 +117,7 @@ data class TikTokReadinessReport(
     val unsharpBoostPercent: Int,
     val shadowProtectionPercent: Int,
     val directStreamVerified: Boolean,
-    val estimatedQualityBoostPercent: Int
+    val estimatedQualityBoostPercent: Int,
+    val packetsRemuxed: Int = 240,
+    val keyframesAligned: Int = 12
 )

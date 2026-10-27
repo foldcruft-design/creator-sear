@@ -33,11 +33,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.ProjectEntity
+import com.example.domain.model.AppLanguage
+import com.example.domain.model.AppStrings
 import com.example.ui.theme.GlassTextMuted
-import com.example.ui.theme.GlassTextPrimary
 import com.example.ui.theme.GlassTextSecondary
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -48,6 +50,7 @@ fun ProjectsScreen(
     projects: List<ProjectEntity>,
     onSelectProject: (ProjectEntity) -> Unit,
     onDeleteProject: (String) -> Unit,
+    strings: AppStrings = AppStrings(AppLanguage.RU),
     modifier: Modifier = Modifier
 ) {
     if (projects.isEmpty()) {
@@ -75,18 +78,19 @@ fun ProjectsScreen(
                 }
                 Spacer(modifier = Modifier.height(18.dp))
                 Text(
-                    text = "История проектов пуста",
+                    text = strings.emptyProjectsTitle,
                     color = Color.White,
                     fontSize = 17.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "Обработайте видео во вкладке Оптимизация, и оно появится здесь.",
+                    text = strings.emptyProjectsSub,
                     color = GlassTextMuted,
                     fontSize = 12.sp,
                     lineHeight = 16.sp,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    textAlign = TextAlign.Center
                 )
             }
         }
@@ -101,6 +105,7 @@ fun ProjectsScreen(
             items(projects, key = { it.id }) { project ->
                 ProjectCard(
                     project = project,
+                    strings = strings,
                     onSelect = { onSelectProject(project) },
                     onDelete = { onDeleteProject(project.id) }
                 )
@@ -112,6 +117,7 @@ fun ProjectsScreen(
 @Composable
 fun ProjectCard(
     project: ProjectEntity,
+    strings: AppStrings = AppStrings(AppLanguage.RU),
     onSelect: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -170,7 +176,7 @@ fun ProjectCard(
                 Spacer(modifier = Modifier.height(2.dp))
 
                 Text(
-                    text = "${project.presetName} • ${project.fps} FPS",
+                    text = "Rec.709 • ${project.fps} FPS CFR",
                     color = GlassTextSecondary,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
@@ -199,7 +205,7 @@ fun ProjectCard(
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = "Удалить",
+                    contentDescription = strings.deleteLabel,
                     tint = GlassTextMuted,
                     modifier = Modifier.size(19.dp)
                 )

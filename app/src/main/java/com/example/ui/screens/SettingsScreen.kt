@@ -1,0 +1,501 @@
+package com.example.ui.screens
+
+import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.rounded.AutoFixHigh
+import androidx.compose.material.icons.rounded.DeleteSweep
+import androidx.compose.material.icons.rounded.RestartAlt
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.domain.engine.TikTokOptimizerEngine
+import com.example.domain.model.AppLanguage
+import com.example.domain.model.AppStrings
+import com.example.domain.model.EnhanceSettings
+import com.example.ui.components.GlassButton
+import com.example.ui.components.GlassSlider
+import com.example.ui.theme.GlassTextMuted
+import com.example.ui.theme.GlassTextSecondary
+import java.util.Locale
+import kotlin.math.roundToInt
+
+@Composable
+fun SettingsScreen(
+    strings: AppStrings,
+    currentLanguage: AppLanguage,
+    settings: EnhanceSettings,
+    onLanguageChange: (AppLanguage) -> Unit,
+    onSettingsChange: (EnhanceSettings) -> Unit,
+    onResetDefaults: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val scrollState = rememberScrollState()
+    var cacheSizeText by remember { mutableStateOf(TikTokOptimizerEngine.getCacheSizeFormatted(context)) }
+
+    BoxWithConstraints(
+        modifier = modifier.fillMaxSize()
+    ) {
+        val isWideScreen = maxWidth > 600.dp
+        val horizontalPadding = if (isWideScreen) 32.dp else 16.dp
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(horizontal = horizontalPadding, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 520.dp)
+                    .fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(18.dp)
+            ) {
+                // Header
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = strings.settingsTitle,
+                        color = Color.White,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = strings.settingsSubtitle,
+                        color = GlassTextMuted,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp
+                    )
+                }
+
+                // 1. Language Selection Glass Card
+                SettingsSectionCard(
+                    sectionLabel = strings.sectionLanguage,
+                    icon = Icons.Default.Language
+                ) {
+                    Text(
+                        text = strings.languageLabel,
+                        color = GlassTextSecondary,
+                        fontSize = 12.sp
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color(0x12FFFFFF))
+                            .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(16.dp))
+                            .padding(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        GlassSegmentedOption(
+                            label = "Русский (RU)",
+                            selected = currentLanguage == AppLanguage.RU,
+                            onClick = { onLanguageChange(AppLanguage.RU) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("lang_ru_button")
+                        )
+                        GlassSegmentedOption(
+                            label = "English (EN)",
+                            selected = currentLanguage == AppLanguage.EN,
+                            onClick = { onLanguageChange(AppLanguage.EN) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("lang_en_button")
+                        )
+                    }
+                }
+
+                // 2. Video Algorithm Calibration Glass Card
+                SettingsSectionCard(
+                    sectionLabel = strings.sectionEngineParams,
+                    icon = Icons.Default.Tune
+                ) {
+                    // Sharpness Slider
+                    GlassSlider(
+                        value = settings.sharpness.toFloat(),
+                        onValueChange = {
+                            onSettingsChange(settings.copy(sharpness = it.roundToInt()))
+                        },
+                        valueRange = 15f..85f,
+                        title = strings.sharpnessLabel,
+                        valueText = "${settings.sharpness}%"
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Shadow IRE Lift Slider
+                    GlassSlider(
+                        value = settings.shadowLift.toFloat(),
+                        onValueChange = {
+                            onSettingsChange(settings.copy(shadowLift = it.roundToInt()))
+                        },
+                        valueRange = 0f..30f,
+                        title = strings.shadowLiftLabel,
+                        valueText = "+${settings.shadowLift}%"
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Bitrate Sweet-Spot Slider
+                    GlassSlider(
+                        value = settings.targetBitrateMbps,
+                        onValueChange = {
+                            val rounded = (it * 10f).roundToInt() / 10f
+                            onSettingsChange(settings.copy(targetBitrateMbps = rounded))
+                        },
+                        valueRange = 10.0f..18.0f,
+                        title = strings.bitrateSweetSpotLabel,
+                        valueText = String.format(Locale.US, "%.1f Mbps", settings.targetBitrateMbps)
+                    )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Target Frame Rate Selector (30 FPS / 60 FPS)
+                    Text(
+                        text = strings.targetFpsLabel,
+                        color = GlassTextSecondary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Color(0x10FFFFFF))
+                            .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(14.dp))
+                            .padding(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        GlassSegmentedOption(
+                            label = "30 FPS Cinema",
+                            selected = settings.targetFps == 30,
+                            onClick = { onSettingsChange(settings.copy(targetFps = 30)) },
+                            modifier = Modifier.weight(1f)
+                        )
+                        GlassSegmentedOption(
+                            label = "60 FPS Smooth",
+                            selected = settings.targetFps == 60,
+                            onClick = { onSettingsChange(settings.copy(targetFps = 60)) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Output Resolution Selector
+                    Text(
+                        text = strings.targetResolutionLabel,
+                        color = GlassTextSecondary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Color(0x10FFFFFF))
+                            .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(14.dp))
+                            .padding(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        GlassSegmentedOption(
+                            label = "1080 × 1920 (FHD)",
+                            selected = settings.targetResolution.contains("1080"),
+                            onClick = { onSettingsChange(settings.copy(targetResolution = "1080 × 1920")) },
+                            modifier = Modifier.weight(1f)
+                        )
+                        GlassSegmentedOption(
+                            label = "1440 × 2560 (2K)",
+                            selected = settings.targetResolution.contains("1440"),
+                            onClick = { onSettingsChange(settings.copy(targetResolution = "1440 × 2560")) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                // 3. Stream Modules & Automation Glass Card
+                SettingsSectionCard(
+                    sectionLabel = strings.sectionStreamFilters,
+                    icon = Icons.Rounded.AutoFixHigh
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        GlassToggleRow(
+                            title = strings.preFilterTitle,
+                            subtitle = strings.preFilterDesc,
+                            checked = settings.vfrToCfrStabilizer,
+                            onCheckedChange = {
+                                onSettingsChange(settings.copy(vfrToCfrStabilizer = it))
+                            }
+                        )
+                        GlassToggleRow(
+                            title = strings.antiBandingTitle,
+                            subtitle = strings.antiBandingSub,
+                            checked = settings.antiBanding,
+                            onCheckedChange = {
+                                onSettingsChange(settings.copy(antiBanding = it))
+                            }
+                        )
+                        GlassToggleRow(
+                            title = strings.denoiseTitle,
+                            subtitle = strings.denoiseSub,
+                            checked = settings.sensorDenoise,
+                            onCheckedChange = {
+                                onSettingsChange(settings.copy(sensorDenoise = it))
+                            }
+                        )
+                        GlassToggleRow(
+                            title = strings.rec709Title,
+                            subtitle = strings.rec709Sub,
+                            checked = settings.rec709ColorMatrix,
+                            onCheckedChange = {
+                                onSettingsChange(settings.copy(rec709ColorMatrix = it))
+                            }
+                        )
+                        GlassToggleRow(
+                            title = strings.autoSaveTitle,
+                            subtitle = strings.autoSaveSub,
+                            checked = settings.autoSaveToGallery,
+                            onCheckedChange = {
+                                onSettingsChange(settings.copy(autoSaveToGallery = it))
+                            }
+                        )
+                    }
+                }
+
+                // 4. Storage & Reset Glass Card
+                SettingsSectionCard(
+                    sectionLabel = strings.sectionStorage,
+                    icon = Icons.Default.Storage
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Color(0x10FFFFFF))
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = strings.cacheUsedLabel,
+                            color = GlassTextSecondary,
+                            fontSize = 12.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = cacheSizeText,
+                            color = Color.White,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    GlassButton(
+                        text = strings.clearCacheBtn,
+                        icon = Icons.Rounded.DeleteSweep,
+                        isPrimary = false,
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            TikTokOptimizerEngine.clearEnhancedCache(context)
+                            cacheSizeText = TikTokOptimizerEngine.getCacheSizeFormatted(context)
+                            Toast.makeText(context, strings.cacheClearedToast, Toast.LENGTH_SHORT).show()
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    GlassButton(
+                        text = strings.resetSettingsBtn,
+                        icon = Icons.Rounded.RestartAlt,
+                        isPrimary = false,
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            onResetDefaults()
+                            Toast.makeText(context, strings.settingsResetToast, Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsSectionCard(
+    sectionLabel: String,
+    icon: ImageVector,
+    content: @Composable () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(Color(0x1AFFFFFF), Color(0x0AFFFFFF))
+                )
+            )
+            .border(
+                1.dp,
+                Brush.verticalGradient(listOf(Color(0x38FFFFFF), Color(0x0EFFFFFF))),
+                RoundedCornerShape(24.dp)
+            )
+            .padding(18.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0x20FFFFFF))
+                        .border(1.dp, Color(0x35FFFFFF), RoundedCornerShape(8.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = sectionLabel,
+                    color = Color.White,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.8.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+            content()
+        }
+    }
+}
+
+@Composable
+private fun GlassSegmentedOption(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (selected) Color(0x35FFFFFF) else Color.Transparent)
+            .border(
+                1.dp,
+                if (selected) Color(0x70FFFFFF) else Color.Transparent,
+                RoundedCornerShape(12.dp)
+            )
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp, horizontal = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            color = if (selected) Color.White else GlassTextMuted,
+            fontSize = 12.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
+        )
+    }
+}
+
+@Composable
+private fun GlassToggleRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color(0x0EFFFFFF))
+            .border(1.dp, Color(0x1CFFFFFF), RoundedCornerShape(16.dp))
+            .clickable { onCheckedChange(!checked) }
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                color = Color.White,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(3.dp))
+            Text(
+                text = subtitle,
+                color = GlassTextMuted,
+                fontSize = 11.sp,
+                lineHeight = 14.sp
+            )
+        }
+        Spacer(modifier = Modifier.width(10.dp))
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = Color(0x80FFFFFF),
+                uncheckedThumbColor = GlassTextMuted,
+                uncheckedTrackColor = Color(0x18FFFFFF)
+            )
+        )
+    }
+}

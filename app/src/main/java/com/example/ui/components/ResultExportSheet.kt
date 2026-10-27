@@ -11,14 +11,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -30,20 +28,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.domain.model.AppLanguage
+import com.example.domain.model.AppStrings
 import com.example.domain.model.EnhanceSettings
 import com.example.domain.model.TikTokReadinessReport
 import com.example.ui.theme.GlassTextMuted
-import com.example.ui.theme.GlassTextPrimary
-import com.example.ui.theme.GlassTextSecondary
 
 @Composable
 fun ResultExportSheet(
     report: TikTokReadinessReport,
     settings: EnhanceSettings,
     savedPath: String? = null,
+    strings: AppStrings = AppStrings(AppLanguage.RU),
     onSaveToGallery: () -> Unit,
     onShareToTikTok: () -> Unit,
     onDismiss: () -> Unit
@@ -89,18 +89,20 @@ fun ResultExportSheet(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
-                    text = "Видео успешно улучшено!",
+                    text = strings.resultTitle,
                     color = Color.White,
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "Алгоритмы защиты от сжатия применены к файлу",
+                    text = strings.resultSubtitle,
                     color = GlassTextMuted,
-                    fontSize = 12.sp
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center
                 )
 
                 Spacer(modifier = Modifier.height(18.dp))
@@ -120,7 +122,7 @@ fun ResultExportSheet(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "ИНДЕКС ЗАЩИТЫ TIKTOK",
+                                text = strings.protectionIndexLabel,
                                 color = GlassTextMuted,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
@@ -143,7 +145,7 @@ fun ResultExportSheet(
                                 .padding(horizontal = 10.dp, vertical = 5.dp)
                         ) {
                             Text(
-                                text = "1080P PASSTHROUGH",
+                                text = strings.passthroughBadge,
                                 color = Color.White,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
@@ -159,12 +161,15 @@ fun ResultExportSheet(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    SpecRow(label = "Целевое разрешение", value = settings.targetResolution)
-                    SpecRow(label = "Частота кадров", value = "${settings.targetFps} FPS Smooth")
-                    SpecRow(label = "Битрейт TikTok Sweet-Spot", value = "${settings.targetBitrateMbps} Mbps")
-                    SpecRow(label = "Адаптивная резкость", value = "+${settings.sharpness}% (Halo Free)")
-                    SpecRow(label = "Защита теней", value = "+${settings.shadowLift}% (IRE Curve)")
-                    SpecRow(label = "Anti-Banding", value = if (settings.antiBanding) "Активен" else "Выкл")
+                    SpecRow(label = strings.labelTargetRes, value = settings.targetResolution)
+                    SpecRow(label = strings.labelFrameRate, value = "${settings.targetFps} FPS CFR")
+                    SpecRow(label = strings.labelBitrate, value = "${settings.targetBitrateMbps} Mbps")
+                    SpecRow(label = strings.labelSharpness, value = "+${settings.sharpness}% (Halo-Free)")
+                    SpecRow(label = strings.labelShadows, value = "+${settings.shadowLift}% (0-15 IRE)")
+                    SpecRow(
+                        label = strings.labelKeyframes,
+                        value = if (settings.vfrToCfrStabilizer) "VFR → CFR · Rec.709" else "Rec.709 Direct"
+                    )
                 }
 
                 if (savedPath != null) {
@@ -178,7 +183,7 @@ fun ResultExportSheet(
                             .padding(10.dp)
                     ) {
                         Text(
-                            text = "Файл сохранён в: $savedPath",
+                            text = "${strings.savedInLabel} $savedPath",
                             color = Color.White,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium
@@ -188,10 +193,10 @@ fun ResultExportSheet(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Download Button (Primary)
+                // Download Button (Primary) with rounded vector Download icon
                 GlassButton(
-                    text = "Скачать видео в Галерею",
-                    icon = Icons.Default.Download,
+                    text = strings.downloadToGalleryBtn,
+                    icon = Icons.Rounded.Download,
                     isPrimary = true,
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onSaveToGallery
@@ -201,8 +206,8 @@ fun ResultExportSheet(
 
                 // Share Button
                 GlassButton(
-                    text = "Поделиться / Отправить",
-                    icon = Icons.Default.Share,
+                    text = strings.shareVideoBtn,
+                    icon = Icons.Rounded.Share,
                     isPrimary = false,
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onShareToTikTok
@@ -216,7 +221,7 @@ fun ResultExportSheet(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "Закрыть",
+                        text = strings.closeBtn,
                         color = GlassTextMuted,
                         fontSize = 13.sp
                     )

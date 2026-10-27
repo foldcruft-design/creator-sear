@@ -35,9 +35,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.data.local.UserEntity
 import com.example.data.repository.AuthRepository
+import com.example.domain.model.AppLanguage
+import com.example.domain.model.AppStrings
 import com.example.ui.components.GlassButton
 import com.example.ui.theme.GlassTextMuted
-import com.example.ui.theme.GlassTextPrimary
 import com.example.ui.theme.GlassTextSecondary
 import kotlinx.coroutines.launch
 
@@ -45,6 +46,7 @@ import kotlinx.coroutines.launch
 fun ProfileDialog(
     user: UserEntity,
     authRepository: AuthRepository,
+    strings: AppStrings = AppStrings(AppLanguage.RU),
     onSignOutOrSwitch: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -109,7 +111,7 @@ fun ProfileDialog(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Tier badge
+                // Free unlocked badge (no paid subscriptions)
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
@@ -126,7 +128,7 @@ fun ProfileDialog(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = user.tier,
+                            text = strings.freeCreatorBadge,
                             color = Color.White,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold
@@ -159,7 +161,7 @@ fun ProfileDialog(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Обработано видео",
+                                text = strings.statVideosProcessed,
                                 color = GlassTextMuted,
                                 fontSize = 10.sp
                             )
@@ -184,7 +186,7 @@ fun ProfileDialog(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Индекс защиты",
+                                text = strings.statProtectionIndex,
                                 color = GlassTextMuted,
                                 fontSize = 10.sp
                             )
@@ -203,16 +205,16 @@ fun ProfileDialog(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    FeatureCheckItem(text = "Адаптивная резкость (Halo Free)")
-                    FeatureCheckItem(text = "Калибровка теней 0-15 IRE")
-                    FeatureCheckItem(text = "Anti-Banding матрица градиентов")
-                    FeatureCheckItem(text = "TikTok Bitrate Sweet-Spot 14.5 Mbps")
+                    FeatureCheckItem(text = strings.sharpnessLabel)
+                    FeatureCheckItem(text = strings.shadowLiftLabel)
+                    FeatureCheckItem(text = strings.antiBandingTitle)
+                    FeatureCheckItem(text = strings.preFilterTitle)
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
 
                 GlassButton(
-                    text = "Сменить профиль / Выйти",
+                    text = strings.switchAccountBtn,
                     icon = Icons.Default.Logout,
                     isPrimary = false,
                     modifier = Modifier.fillMaxWidth(),
@@ -231,7 +233,7 @@ fun ProfileDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Закрыть", color = GlassTextMuted, fontSize = 13.sp)
+                    Text(text = strings.closeBtn, color = GlassTextMuted, fontSize = 13.sp)
                 }
             }
         }

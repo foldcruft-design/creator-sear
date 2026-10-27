@@ -6,9 +6,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.example.data.repository.AuthRepository
+import com.example.data.repository.SettingsRepository
 import com.example.data.repository.VideoProjectRepository
 import com.example.ui.screens.HomeScreen
 import com.example.ui.theme.GlassObsidian
@@ -21,6 +21,7 @@ class MainActivity : ComponentActivity() {
 
         val authRepository = AuthRepository(this)
         val projectRepository = VideoProjectRepository(this)
+        val settingsRepository = SettingsRepository(this)
 
         setContent {
             TokEnhanceTheme {
@@ -30,7 +31,8 @@ class MainActivity : ComponentActivity() {
                 ) {
                     HomeScreen(
                         authRepository = authRepository,
-                        projectRepository = projectRepository
+                        projectRepository = projectRepository,
+                        settingsRepository = settingsRepository
                     )
                 }
             }
