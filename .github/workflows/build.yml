@@ -73,20 +73,69 @@ jobs:
       - name: Run Unit Tests
         run: ./gradlew testDebugUnitTest --stacktrace
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace
+      - name: Build APKs (Debug & Release)
+        run: |
+          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleRelease --stacktrace
+
+      - name: Dual-Sign APKs (v1 JAR Signatures + v2/v3 APK Schemes)
+        run: |
+          echo "Signing all generated APKs to guarantee compatibility with all Android versions and package installers..."
+          BUILD_TOOLS_DIR=$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 | sort -V | tail -n 1)
+          echo "Using Build-Tools from: $BUILD_TOOLS_DIR"
+
+          for apk in $(find app/build/outputs/apk -name "*.apk"); do
+            echo "----------------------------------------"
+            echo "Processing APK: $apk"
+            
+            # Step 1: Add v1 JAR signature files (META-INF/*.SF and META-INF/*.RSA)
+            echo "Applying v1 (JAR signing) with jarsigner..."
+            jarsigner -keystore debug.keystore \
+              -storepass android \
+              -keypass android \
+              -sigalg SHA256withRSA \
+              -digestalg SHA-256 \
+              "$apk" androiddebugkey
+
+            # Step 2: Apply v2 and v3 signatures using apksigner
+            echo "Applying v2/v3 APK schemes with apksigner..."
+            "$BUILD_TOOLS_DIR/apksigner" sign \
+              --ks debug.keystore \
+              --ks-pass pass:android \
+              --key-pass pass:android \
+              --v1-signing-enabled true \
+              --v2-signing-enabled true \
+              --v3-signing-enabled true \
+              "$apk"
+
+            # Step 3: Verify signature integrity
+            echo "Verifying signature:"
+            "$BUILD_TOOLS_DIR/apksigner" verify --verbose "$apk"
+            echo "----------------------------------------"
+          done
 
       - name: Verify APK Integrity
         run: |
-          echo "Checking APK file and verifying zip integrity..."
-          ls -lh app/build/outputs/apk/debug/
+          echo "Checking APK outputs:"
+          ls -lh app/build/outputs/apk/debug/app-debug.apk
+          ls -lh app/build/outputs/apk/release/app-release.apk
           unzip -t app/build/outputs/apk/debug/app-debug.apk
+          unzip -t app/build/outputs/apk/release/app-release.apk
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: TokEnhance-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TokEnhance-release-apk
+          path: app/build/outputs/apk/release/app-release.apk
           compression-level: 0
           if-no-files-found: error
           retention-days: 14
