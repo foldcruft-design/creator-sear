@@ -324,6 +324,10 @@ object TikTokOptimizerEngine {
                                     MediaFormat.KEY_COLOR_RANGE,
                                     MediaFormat.COLOR_RANGE_LIMITED
                                 )
+                                format.setInteger(
+                                    MediaFormat.KEY_COLOR_TRANSFER,
+                                    MediaFormat.COLOR_TRANSFER_SDR_VIDEO
+                                )
                             } catch (_: Exception) {
                             }
                         }
@@ -333,6 +337,14 @@ object TikTokOptimizerEngine {
                                 (settings.targetBitrateMbps * 1_000_000f).toInt()
                             )
                             format.setInteger(MediaFormat.KEY_FRAME_RATE, settings.targetFps)
+                            format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 2)
+                        } catch (_: Exception) {
+                        }
+                    } else if (mime.startsWith("audio/")) {
+                        // High-fidelity AAC normalization (192kbps)
+                        try {
+                            format.setInteger(MediaFormat.KEY_BIT_RATE, 192000)
+                            format.setInteger(MediaFormat.KEY_AAC_PROFILE, android.media.MediaCodecInfo.CodecProfileLevel.AACObjectLC)
                         } catch (_: Exception) {
                         }
                     }

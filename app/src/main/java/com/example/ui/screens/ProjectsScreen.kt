@@ -170,33 +170,41 @@ fun ProjectCard(
                     color = Color.White,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
 
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(3.dp))
 
                 Text(
                     text = "Rec.709 • ${project.fps} FPS CFR",
                     color = GlassTextSecondary,
                     fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    softWrap = false
+                )
+
+                Spacer(modifier = Modifier.height(3.dp))
+
+                Text(
+                    text = "${project.resolution} • ${project.targetBitrateMbps} Mbps",
+                    color = GlassTextMuted,
+                    fontSize = 11.sp,
+                    maxLines = 1,
+                    softWrap = false
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "${project.resolution} • ${project.targetBitrateMbps} Mbps",
-                        color = GlassTextMuted,
-                        fontSize = 11.sp
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "• $dateStr",
-                        color = GlassTextMuted.copy(alpha = 0.7f),
-                        fontSize = 10.sp
-                    )
-                }
+                Text(
+                    text = dateStr,
+                    color = GlassTextMuted.copy(alpha = 0.85f),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Normal,
+                    maxLines = 1,
+                    softWrap = false
+                )
             }
 
             IconButton(

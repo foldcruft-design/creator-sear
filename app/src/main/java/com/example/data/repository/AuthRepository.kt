@@ -1,6 +1,7 @@
 package com.example.data.repository
 
 import android.content.Context
+import android.net.Uri
 import com.example.data.local.AppDatabase
 import com.example.data.local.UserEntity
 import kotlinx.coroutines.CoroutineScope
@@ -9,6 +10,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
 import java.security.MessageDigest
 import java.util.UUID
 
@@ -123,6 +127,31 @@ class AuthRepository(context: Context) {
         val refreshed = userDao.getUserById(user.id)
         if (refreshed != null) {
             _currentUser.value = refreshed
+        }
+    }
+
+    suspend fun updateAvatarUri(uriString: String) {
+        val user = _currentUser.value ?: return
+        val updated = user.copy(avatarUri = uriString)
+        userDao.updateUser(updated)
+        _currentUser.value = updated
+    }
+
+    suspend fun saveAvatarFromUri(context: Context, sourceUri: Uri): String? = withContext(Dispatchers.IO) {
+        try {
+            val user = _currentUser.value ?: return@withContext null
+            val avatarDir = File(context.filesDir, "avatars").apply { mkdirs() }
+            val avatarFile = File(avatarDir, "avatar_${user.id}.jpg")
+            context.contentResolver.openInputStream(sourceUri)?.use { input ->
+                FileOutputStream(avatarFile).use { output ->
+                    input.copyTo(output)
+                }
+            }
+            val localPath = avatarFile.absolutePath
+            updateAvatarUri(localPath)
+            localPath
+        } catch (_: Exception) {
+            null
         }
     }
 

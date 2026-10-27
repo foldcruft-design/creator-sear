@@ -42,6 +42,15 @@ import com.example.ui.theme.GlassTextMuted
 import com.example.ui.theme.GlassTextSecondary
 import kotlinx.coroutines.launch
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.AsyncImage
+
 @Composable
 fun ProfileDialog(
     user: UserEntity,
@@ -50,7 +59,18 @@ fun ProfileDialog(
     onSignOutOrSwitch: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
+
+    val avatarPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                authRepository.saveAvatarFromUri(context, uri)
+            }
+        }
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Box(
@@ -73,28 +93,70 @@ fun ProfileDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Large Frosted Avatar
+                // Large Frosted Avatar (Tap to change)
                 Box(
                     modifier = Modifier
-                        .size(72.dp)
+                        .size(80.dp)
                         .clip(CircleShape)
                         .background(
                             Brush.verticalGradient(
                                 listOf(Color(0x40FFFFFF), Color(0x15FFFFFF))
                             )
                         )
-                        .border(2.dp, Color(0x80FFFFFF), CircleShape),
+                        .border(2.dp, Color(0x80FFFFFF), CircleShape)
+                        .clickable {
+                            avatarPicker.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
                     contentAlignment = Alignment.Center
                 ) {
+                    if (!user.avatarUri.isNullOrEmpty()) {
+                        AsyncImage(
+                            model = user.avatarUri,
+                            contentDescription = "Avatar",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.size(80.dp).clip(CircleShape)
+                        )
+                    } else {
+                        Text(
+                            text = user.username.take(1).uppercase(),
+                            color = Color.White,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable {
+                            avatarPicker.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        }
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AddAPhoto,
+                        contentDescription = null,
+                        tint = GlassTextSecondary,
+                        modifier = Modifier.size(13.dp)
+                    )
+                    Spacer(modifier = Modifier.width(5.dp))
                     Text(
-                        text = user.username.take(1).uppercase(),
-                        color = Color.White,
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold
+                        text = if (strings.isRu) "Сменить аватарку" else "Change avatar",
+                        color = GlassTextSecondary,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
                     text = user.username,

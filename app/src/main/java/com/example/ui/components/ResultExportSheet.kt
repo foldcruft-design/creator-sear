@@ -9,10 +9,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.rounded.Download
@@ -32,11 +37,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.domain.model.AppLanguage
 import com.example.domain.model.AppStrings
 import com.example.domain.model.EnhanceSettings
 import com.example.domain.model.TikTokReadinessReport
 import com.example.ui.theme.GlassTextMuted
+import com.example.ui.theme.GlassTextSecondary
 
 @Composable
 fun ResultExportSheet(
@@ -48,31 +55,41 @@ fun ResultExportSheet(
     onShareToTikTok: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    Dialog(onDismissRequest = onDismiss) {
+    val scrollState = rememberScrollState()
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Box(
             modifier = Modifier
+                .padding(horizontal = 20.dp, vertical = 24.dp)
+                .widthIn(max = 480.dp)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(30.dp))
+                .clip(RoundedCornerShape(28.dp))
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color(0xE614161C), Color(0xF208090C))
+                        colors = listOf(Color(0xF014161C), Color(0xF808090C))
                     )
                 )
                 .border(
                     1.dp,
                     Brush.verticalGradient(listOf(Color(0x60FFFFFF), Color(0x14FFFFFF))),
-                    RoundedCornerShape(30.dp)
+                    RoundedCornerShape(28.dp)
                 )
-                .padding(26.dp)
+                .padding(horizontal = 20.dp, vertical = 22.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 580.dp)
+                    .verticalScroll(scrollState)
             ) {
                 // Frosted Verified Emblem
                 Box(
                     modifier = Modifier
-                        .size(58.dp)
+                        .size(52.dp)
                         .clip(CircleShape)
                         .background(Color(0x28FFFFFF))
                         .border(1.5.dp, Color(0x80FFFFFF), CircleShape),
@@ -82,11 +99,11 @@ fun ResultExportSheet(
                         imageVector = Icons.Default.Check,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(30.dp)
+                        modifier = Modifier.size(28.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
                     text = strings.resultTitle,
@@ -105,20 +122,21 @@ fun ResultExportSheet(
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // Score card
+                // Score card - compact and unwrapped
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(18.dp))
                         .background(Color(0x18FFFFFF))
-                        .border(1.dp, Color(0x30FFFFFF), RoundedCornerShape(20.dp))
-                        .padding(16.dp)
+                        .border(1.dp, Color(0x30FFFFFF), RoundedCornerShape(18.dp))
+                        .padding(horizontal = 14.dp, vertical = 12.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
@@ -132,40 +150,44 @@ fun ResultExportSheet(
                             Text(
                                 text = "${report.score}% Anti-Compression",
                                 color = Color.White,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
 
+                        Spacer(modifier = Modifier.width(8.dp))
+
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
+                                .clip(RoundedCornerShape(10.dp))
                                 .background(Color(0x30FFFFFF))
-                                .border(1.dp, Color(0x50FFFFFF), RoundedCornerShape(12.dp))
+                                .border(1.dp, Color(0x50FFFFFF), RoundedCornerShape(10.dp))
                                 .padding(horizontal = 10.dp, vertical = 5.dp)
                         ) {
                             Text(
                                 text = strings.passthroughBadge,
                                 color = Color.White,
                                 fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // Diagnostic parameters
+                // Core diagnostic parameters (Resolution, Framerate, Bitrate, Standard)
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     SpecRow(label = strings.labelTargetRes, value = settings.targetResolution)
                     SpecRow(label = strings.labelFrameRate, value = "${settings.targetFps} FPS CFR")
                     SpecRow(label = strings.labelBitrate, value = "${settings.targetBitrateMbps} Mbps")
-                    SpecRow(label = strings.labelSharpness, value = "+${settings.sharpness}% (Halo-Free)")
-                    SpecRow(label = strings.labelShadows, value = "+${settings.shadowLift}% (0-15 IRE)")
                     SpecRow(
                         label = strings.labelKeyframes,
                         value = if (settings.vfrToCfrStabilizer) "VFR → CFR · Rec.709" else "Rec.709 Direct"
@@ -173,27 +195,28 @@ fun ResultExportSheet(
                 }
 
                 if (savedPath != null) {
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
                             .background(Color(0x1EFFFFFF))
                             .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(12.dp))
-                            .padding(10.dp)
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
                     ) {
                         Text(
                             text = "${strings.savedInLabel} $savedPath",
                             color = Color.White,
                             fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // Download Button (Primary) with rounded vector Download icon
+                // Download Button (Primary)
                 GlassButton(
                     text = strings.downloadToGalleryBtn,
                     icon = Icons.Rounded.Download,
@@ -202,7 +225,7 @@ fun ResultExportSheet(
                     onClick = onSaveToGallery
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // Share Button
                 GlassButton(
@@ -213,7 +236,7 @@ fun ResultExportSheet(
                     onClick = onShareToTikTok
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
                 Button(
                     onClick = onDismiss,
@@ -236,13 +259,27 @@ private fun SpecRow(label: String, value: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(10.dp))
             .background(Color(0x10FFFFFF))
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .padding(horizontal = 12.dp, vertical = 7.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = label, color = GlassTextMuted, fontSize = 12.sp)
-        Text(text = value, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        Text(
+            text = label,
+            color = GlassTextMuted,
+            fontSize = 11.sp,
+            maxLines = 1,
+            modifier = Modifier.weight(1f, fill = false)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = value,
+            color = Color.White,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            softWrap = false
+        )
     }
 }

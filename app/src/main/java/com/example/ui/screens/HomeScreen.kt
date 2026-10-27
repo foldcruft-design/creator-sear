@@ -35,6 +35,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.ExpandMore
@@ -369,6 +370,7 @@ fun HomeScreen(
                         currentUser?.let { user ->
                             ProfileScreenContent(
                                 user = user,
+                                authRepository = authRepository,
                                 strings = strings,
                                 onAuthAction = {
                                     if (user.passwordHash.isEmpty()) {
@@ -506,9 +508,10 @@ private fun TopBar(
             Text(
                 text = strings.appTitle,
                 color = Color.White,
-                fontSize = 17.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
-                maxLines = 1
+                maxLines = 1,
+                softWrap = false
             )
         }
 
@@ -544,7 +547,7 @@ private fun TopBar(
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // Compact, single-line, perfectly scaled Profile Pill
+        // Compact, single-line, perfectly scaled Profile Pill with Avatar
         Box(
             modifier = Modifier
                 .height(34.dp)
@@ -552,19 +555,30 @@ private fun TopBar(
                 .background(Color(0x18FFFFFF))
                 .border(1.dp, Color(0x30FFFFFF), RoundedCornerShape(17.dp))
                 .clickable(onClick = onUserClick)
-                .padding(horizontal = 12.dp)
+                .padding(horizontal = 10.dp)
                 .testTag("topbar_profile_button"),
             contentAlignment = Alignment.Center
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(15.dp)
-                )
+                if (!user?.avatarUri.isNullOrEmpty()) {
+                    coil.compose.AsyncImage(
+                        model = user?.avatarUri,
+                        contentDescription = "Avatar",
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clip(CircleShape)
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
                 Spacer(modifier = Modifier.width(6.dp))
                 val displayName = if (user == null || user.passwordHash.isEmpty()) {
                     strings.accountGuestLabel
@@ -577,7 +591,8 @@ private fun TopBar(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    softWrap = false
                 )
             }
         }
@@ -706,64 +721,7 @@ private fun OptimizerZilemContent(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // VFR & Bitrate Stabilizer Switch Row (Free Core Engine, no paid badges)
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(18.dp))
-                                .background(Color(0x0DFFFFFF))
-                                .border(1.dp, Color(0x1AFFFFFF), RoundedCornerShape(18.dp))
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = strings.preFilterTitle,
-                                        color = Color.White,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .background(Color(0x20FFFFFF))
-                                            .border(1.dp, Color(0x35FFFFFF), RoundedCornerShape(6.dp))
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                                    ) {
-                                        Text(
-                                            text = strings.preFilterBadge,
-                                            color = Color.White,
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(3.dp))
-                                Text(
-                                    text = strings.preFilterDesc,
-                                    color = GlassTextMuted,
-                                    fontSize = 11.sp,
-                                    lineHeight = 14.sp
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Switch(
-                                checked = settings.vfrToCfrStabilizer,
-                                onCheckedChange = onVfrToggle,
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = Color.White,
-                                    checkedTrackColor = Color(0x80FFFFFF),
-                                    uncheckedThumbColor = GlassTextMuted,
-                                    uncheckedTrackColor = Color(0x18FFFFFF)
-                                )
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
                         // Large "Drop your video here" Zone
                         Box(
@@ -1224,9 +1182,23 @@ private fun FAQAccordion(item: FAQItemText) {
 @Composable
 private fun ProfileScreenContent(
     user: UserEntity,
+    authRepository: AuthRepository,
     strings: AppStrings,
     onAuthAction: () -> Unit
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    val avatarPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                authRepository.saveAvatarFromUri(context, uri)
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1235,27 +1207,70 @@ private fun ProfileScreenContent(
     ) {
         Spacer(modifier = Modifier.height(14.dp))
 
+        // Avatar (Tap to change)
         Box(
             modifier = Modifier
-                .size(76.dp)
+                .size(86.dp)
                 .clip(CircleShape)
                 .background(
                     Brush.verticalGradient(
                         listOf(Color(0x40FFFFFF), Color(0x18FFFFFF))
                     )
                 )
-                .border(2.dp, Color(0x80FFFFFF), CircleShape),
+                .border(2.dp, Color(0x80FFFFFF), CircleShape)
+                .clickable {
+                    avatarPicker.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                },
             contentAlignment = Alignment.Center
         ) {
+            if (!user.avatarUri.isNullOrEmpty()) {
+                coil.compose.AsyncImage(
+                    model = user.avatarUri,
+                    contentDescription = "Avatar",
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    modifier = Modifier.size(86.dp).clip(CircleShape)
+                )
+            } else {
+                Text(
+                    text = user.username.take(1).uppercase(),
+                    color = Color.White,
+                    fontSize = 34.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(12.dp))
+                .clickable {
+                    avatarPicker.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                }
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.AddAPhoto,
+                contentDescription = null,
+                tint = GlassTextSecondary,
+                modifier = Modifier.size(13.dp)
+            )
+            Spacer(modifier = Modifier.width(5.dp))
             Text(
-                text = user.username.take(1).uppercase(),
-                color = Color.White,
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold
+                text = if (strings.isRu) "Выбрать аватарку" else "Change avatar",
+                color = GlassTextSecondary,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium
             )
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         Text(
             text = user.username,

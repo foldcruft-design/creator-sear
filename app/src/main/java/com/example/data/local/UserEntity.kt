@@ -14,5 +14,6 @@ data class UserEntity(
     val registeredAt: Long = System.currentTimeMillis(),
     val tier: String = "TikTok Ultra Pro",
     val videosEnhancedCount: Int = 0,
-    val bandwidthSavedMb: Float = 0f
+    val bandwidthSavedMb: Float = 0f,
+    val avatarUri: String? = null
 )
