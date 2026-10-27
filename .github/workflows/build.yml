@@ -37,7 +37,6 @@ jobs:
       - name: Setup Gradle Environment
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '9.3.1'
           cache-read-only: false
 
       - name: Accept Android SDK Licenses
@@ -77,14 +76,17 @@ jobs:
       - name: Build Debug APK
         run: ./gradlew assembleDebug --stacktrace
 
+      - name: Verify APK Integrity
+        run: |
+          echo "Checking APK file and verifying zip integrity..."
+          ls -lh app/build/outputs/apk/debug/
+          unzip -t app/build/outputs/apk/debug/app-debug.apk
+
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: TokEnhance-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          compression-level: 0
+          if-no-files-found: error
           retention-days: 14
-
-      - name: Verify APK Output
-        run: |
-          echo "Built APK files:"
-          ls -lh app/build/outputs/apk/debug/
