@@ -79,6 +79,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.local.UserEntity
+import com.example.data.local.isRegistered
 import com.example.data.repository.AuthRepository
 import com.example.data.repository.SettingsRepository
 import com.example.data.repository.VideoProjectRepository
@@ -93,6 +94,7 @@ import com.example.domain.model.VideoItem
 import com.example.ui.components.GlassButton
 import com.example.ui.components.ProcessingDialog
 import com.example.ui.components.ResultExportSheet
+import com.example.ui.components.VerifiedBadge
 import com.example.ui.theme.GlassObsidian
 import com.example.ui.theme.GlassTextMuted
 import com.example.ui.theme.GlassTextSecondary
@@ -193,7 +195,7 @@ fun HomeScreen(
                     activeSettingsRepo.setLanguage(next)
                 },
                 onUserClick = {
-                    if (currentUser == null || currentUser?.passwordHash.isNullOrEmpty()) {
+                    if (currentUser == null || !currentUser!!.isRegistered) {
                         showAuthDialog = true
                     } else {
                         showProfileDialog = true
@@ -392,6 +394,7 @@ fun HomeScreen(
             BottomNavigationBar(
                 strings = strings,
                 currentTab = currentTab,
+                isRegistered = currentUser?.isRegistered == true,
                 onTabSelected = { currentTab = it }
             )
         }
@@ -547,21 +550,37 @@ private fun TopBar(
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // Compact, single-line, perfectly scaled Profile Pill with Avatar
+        // Profile Pill with Prominent Verified Checkmark
+        val isRegistered = user != null && user.isRegistered
+        val pillBorder = if (isRegistered) {
+            Brush.horizontalGradient(listOf(Color(0xFF00E5FF), Color(0x60FFFFFF)))
+        } else {
+            Brush.verticalGradient(listOf(Color(0x35FFFFFF), Color(0x15FFFFFF)))
+        }
+
         Box(
             modifier = Modifier
                 .height(34.dp)
                 .clip(RoundedCornerShape(17.dp))
-                .background(Color(0x18FFFFFF))
-                .border(1.dp, Color(0x30FFFFFF), RoundedCornerShape(17.dp))
+                .background(if (isRegistered) Color(0x2800E5FF) else Color(0x18FFFFFF))
+                .border(if (isRegistered) 1.2.dp else 1.dp, pillBorder, RoundedCornerShape(17.dp))
                 .clickable(onClick = onUserClick)
-                .padding(horizontal = 10.dp)
+                .padding(horizontal = 9.dp)
                 .testTag("topbar_profile_button"),
             contentAlignment = Alignment.Center
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Prominent checkmark directly in front of the nickname or account
+                if (isRegistered) {
+                    VerifiedBadge(
+                        size = 15.dp,
+                        iconSize = 9.dp,
+                        modifier = Modifier.padding(end = 5.dp)
+                    )
+                }
+
                 if (!user?.avatarUri.isNullOrEmpty()) {
                     coil.compose.AsyncImage(
                         model = user?.avatarUri,
@@ -571,25 +590,27 @@ private fun TopBar(
                             .size(20.dp)
                             .clip(CircleShape)
                     )
-                } else {
+                    Spacer(modifier = Modifier.width(5.dp))
+                } else if (!isRegistered) {
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = null,
                         tint = Color.White,
                         modifier = Modifier.size(15.dp)
                     )
+                    Spacer(modifier = Modifier.width(6.dp))
                 }
-                Spacer(modifier = Modifier.width(6.dp))
-                val displayName = if (user == null || user.passwordHash.isEmpty()) {
+
+                val displayName = if (!isRegistered) {
                     strings.accountGuestLabel
                 } else {
-                    user.username
+                    user!!.username
                 }
                 Text(
                     text = displayName,
                     color = Color.White,
                     fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = if (isRegistered) FontWeight.Bold else FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     softWrap = false
@@ -1207,37 +1228,47 @@ private fun ProfileScreenContent(
     ) {
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Avatar (Tap to change)
-        Box(
-            modifier = Modifier
-                .size(86.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color(0x40FFFFFF), Color(0x18FFFFFF))
+        // Avatar with Pinned Verified Badge
+        Box(contentAlignment = Alignment.BottomEnd) {
+            Box(
+                modifier = Modifier
+                    .size(86.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color(0x40FFFFFF), Color(0x18FFFFFF))
+                        )
                     )
-                )
-                .border(2.dp, Color(0x80FFFFFF), CircleShape)
-                .clickable {
-                    avatarPicker.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    .border(2.dp, Color(0x80FFFFFF), CircleShape)
+                    .clickable {
+                        avatarPicker.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                if (!user.avatarUri.isNullOrEmpty()) {
+                    coil.compose.AsyncImage(
+                        model = user.avatarUri,
+                        contentDescription = "Avatar",
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        modifier = Modifier.size(86.dp).clip(CircleShape)
                     )
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            if (!user.avatarUri.isNullOrEmpty()) {
-                coil.compose.AsyncImage(
-                    model = user.avatarUri,
-                    contentDescription = "Avatar",
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                    modifier = Modifier.size(86.dp).clip(CircleShape)
-                )
-            } else {
-                Text(
-                    text = user.username.take(1).uppercase(),
-                    color = Color.White,
-                    fontSize = 34.sp,
-                    fontWeight = FontWeight.Bold
+                } else {
+                    Text(
+                        text = user.username.take(1).uppercase(),
+                        color = Color.White,
+                        fontSize = 34.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            if (user.isRegistered) {
+                VerifiedBadge(
+                    size = 24.dp,
+                    iconSize = 14.dp,
+                    modifier = Modifier.padding(2.dp)
                 )
             }
         }
@@ -1272,12 +1303,26 @@ private fun ProfileScreenContent(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Text(
-            text = user.username,
-            color = Color.White,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
-        )
+        // Prominent verified checkmark directly in front of the nickname
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            if (user.isRegistered) {
+                VerifiedBadge(
+                    size = 19.dp,
+                    iconSize = 12.dp
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+
+            Text(
+                text = user.username,
+                color = Color.White,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
 
         Text(
             text = user.email,
@@ -1287,19 +1332,40 @@ private fun ProfileScreenContent(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color(0x1EFFFFFF))
-                .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(16.dp))
-                .padding(horizontal = 12.dp, vertical = 5.dp)
-        ) {
-            Text(
-                text = strings.freeCreatorBadge,
-                color = Color.White,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold
-            )
+        // Verified status pill
+        if (user.isRegistered) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0x2400E5FF))
+                    .border(1.dp, Color(0x7500E5FF), RoundedCornerShape(16.dp))
+                    .padding(horizontal = 14.dp, vertical = 6.dp)
+            ) {
+                VerifiedBadge(size = 14.dp, iconSize = 9.dp)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = strings.sessionPersistentNotice,
+                    color = Color(0xFFE0F7FF),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color(0x1EFFFFFF))
+                    .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(16.dp))
+                    .padding(horizontal = 12.dp, vertical = 5.dp)
+            ) {
+                Text(
+                    text = strings.freeCreatorBadge,
+                    color = Color.White,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(22.dp))
@@ -1348,9 +1414,9 @@ private fun ProfileScreenContent(
         Spacer(modifier = Modifier.height(24.dp))
 
         GlassButton(
-            text = if (user.passwordHash.isEmpty()) strings.registerAccountBtn else strings.switchAccountBtn,
+            text = if (!user.isRegistered) strings.registerAccountBtn else strings.switchAccountBtn,
             icon = Icons.Default.Person,
-            isPrimary = user.passwordHash.isEmpty(),
+            isPrimary = !user.isRegistered,
             modifier = Modifier.fillMaxWidth(),
             onClick = onAuthAction
         )
@@ -1361,6 +1427,7 @@ private fun ProfileScreenContent(
 private fun BottomNavigationBar(
     strings: AppStrings,
     currentTab: Int,
+    isRegistered: Boolean,
     onTabSelected: (Int) -> Unit
 ) {
     Box(
@@ -1412,6 +1479,7 @@ private fun BottomNavigationBar(
                 icon = Icons.Default.Person,
                 isSelected = currentTab == 3,
                 testTag = "nav_tab_profile",
+                showVerifiedDot = isRegistered,
                 onClick = { onTabSelected(3) }
             )
         }
@@ -1424,6 +1492,7 @@ private fun NavTabItem(
     icon: ImageVector,
     isSelected: Boolean,
     testTag: String,
+    showVerifiedDot: Boolean = false,
     onClick: () -> Unit
 ) {
     Box(
@@ -1441,12 +1510,24 @@ private fun NavTabItem(
         contentAlignment = Alignment.Center
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = if (isSelected) Color.White else GlassTextMuted,
-                modifier = Modifier.size(18.dp)
-            )
+            Box {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = if (isSelected) Color.White else GlassTextMuted,
+                    modifier = Modifier.size(18.dp)
+                )
+                if (showVerifiedDot) {
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF00E5FF))
+                            .border(1.dp, Color(0xFF0A0C10), CircleShape)
+                            .align(Alignment.TopEnd)
+                    )
+                }
+            }
             if (isSelected) {
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(

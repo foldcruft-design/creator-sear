@@ -231,13 +231,30 @@ class AppStrings(val lang: AppLanguage) {
     // Auth Dialog
     val signUpHeader = if (isRu) "Регистрация профиля" else "Create Creator Profile"
     val signInHeader = if (isRu) "Вход в аккаунт" else "Sign In to TokEnhance"
-    val authSub = if (isRu) "Сохраняйте историю оптимизированных видео на устройстве" else "Save your optimized video history and custom presets"
-    val tabSignUp = if (isRu) "Регистрация" else "Sign Up"
-    val tabSignIn = if (isRu) "Вход" else "Sign In"
+    val authSub = if (isRu) "Сессия сохраняется на устройстве даже после выхода из приложения" else "Persistent session saved on your device across app restarts"
+    val tabSignUp = if (isRu) "Создать аккаунт" else "Sign Up"
+    val tabSignIn = if (isRu) "Войти" else "Sign In"
     val placeholderUsername = if (isRu) "Имя автора / Никнейм" else "Creator Name / Username"
     val placeholderEmail = "Email (creator@tok.io)"
     val placeholderPassword = if (isRu) "Пароль (от 4 символов)" else "Password (min 4 chars)"
-    val submitSignUp = if (isRu) "Создать профиль" else "Create Account"
-    val submitSignIn = if (isRu) "Войти" else "Sign In"
+    val submitSignUp = if (isRu) "Зарегистрироваться" else "Create Profile"
+    val submitSignIn = if (isRu) "Войти в профиль" else "Sign In"
     val continueGuest = if (isRu) "Продолжить без регистрации" else "Continue as Guest"
+
+    val verifiedAccountBadge = if (isRu) "Подтверждённый автор" else "Verified Creator"
+    val verifiedAccountSub = if (isRu) "Галочка активирована перед ником" else "Checkmark badge active in front of username"
+    val sessionPersistentNotice = if (isRu) "Сессия сохранена · Вход постоянный" else "Persistent session · Saved"
+    val regSuccessTitle = if (isRu) "Регистрация успешна!" else "Registration Successful!"
+    val regSuccessDesc = if (isRu) {
+        "Галочка автора активирована перед вашим ником и сохранится даже после закрытия приложения."
+    } else {
+        "Creator checkmark badge is active in front of your nickname and saved permanently."
+    }
+    val avatarPickerHeader = if (isRu) "Выберите аватарку профиля" else "Choose profile avatar"
+    val avatarFromGallery = if (isRu) "Своё фото" else "Upload photo"
+    val passwordWeak = if (isRu) "Короткий" else "Too short"
+    val passwordMedium = if (isRu) "Надёжный" else "Good"
+    val passwordStrong = if (isRu) "Отличный" else "Strong"
+    val verifiedPillTip = if (isRu) "✓ Галочка появится перед ником сразу после регистрации" else "✓ Verified badge appears before nickname upon registration"
 }
+

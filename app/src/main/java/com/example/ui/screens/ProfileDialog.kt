@@ -34,10 +34,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.data.local.UserEntity
+import com.example.data.local.isRegistered
 import com.example.data.repository.AuthRepository
 import com.example.domain.model.AppLanguage
 import com.example.domain.model.AppStrings
 import com.example.ui.components.GlassButton
+import com.example.ui.components.VerifiedBadge
 import com.example.ui.theme.GlassTextMuted
 import com.example.ui.theme.GlassTextSecondary
 import kotlinx.coroutines.launch
@@ -93,37 +95,47 @@ fun ProfileDialog(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Large Frosted Avatar (Tap to change)
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .clip(CircleShape)
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(Color(0x40FFFFFF), Color(0x15FFFFFF))
+                // Large Frosted Avatar with Pinned Verified Badge
+                Box(contentAlignment = Alignment.BottomEnd) {
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(CircleShape)
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(Color(0x40FFFFFF), Color(0x15FFFFFF))
+                                )
                             )
-                        )
-                        .border(2.dp, Color(0x80FFFFFF), CircleShape)
-                        .clickable {
-                            avatarPicker.launch(
-                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            .border(2.dp, Color(0x80FFFFFF), CircleShape)
+                            .clickable {
+                                avatarPicker.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (!user.avatarUri.isNullOrEmpty()) {
+                            AsyncImage(
+                                model = user.avatarUri,
+                                contentDescription = "Avatar",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.size(80.dp).clip(CircleShape)
                             )
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (!user.avatarUri.isNullOrEmpty()) {
-                        AsyncImage(
-                            model = user.avatarUri,
-                            contentDescription = "Avatar",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.size(80.dp).clip(CircleShape)
-                        )
-                    } else {
-                        Text(
-                            text = user.username.take(1).uppercase(),
-                            color = Color.White,
-                            fontSize = 30.sp,
-                            fontWeight = FontWeight.Bold
+                        } else {
+                            Text(
+                                text = user.username.take(1).uppercase(),
+                                color = Color.White,
+                                fontSize = 30.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    if (user.isRegistered) {
+                        VerifiedBadge(
+                            size = 24.dp,
+                            iconSize = 14.dp,
+                            modifier = Modifier.padding(2.dp)
                         )
                     }
                 }
@@ -158,12 +170,26 @@ fun ProfileDialog(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                Text(
-                    text = user.username,
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                // Prominent checkmark directly in front of the nickname
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    if (user.isRegistered) {
+                        VerifiedBadge(
+                            size = 18.dp,
+                            iconSize = 11.dp
+                        )
+                        Spacer(modifier = Modifier.width(7.dp))
+                    }
+
+                    Text(
+                        text = user.username,
+                        color = Color.White,
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
 
                 Text(
                     text = user.email,
@@ -173,28 +199,48 @@ fun ProfileDialog(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Free unlocked badge (no paid subscriptions)
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(Color(0x22FFFFFF))
-                        .border(1.dp, Color(0x45FFFFFF), RoundedCornerShape(20.dp))
-                        .padding(horizontal = 14.dp, vertical = 6.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Bolt,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(14.dp)
-                        )
+                // Verified Creator Badge vs Guest Badge
+                if (user.isRegistered) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Color(0x2200E5FF))
+                            .border(1.dp, Color(0x7500E5FF), RoundedCornerShape(20.dp))
+                            .padding(horizontal = 14.dp, vertical = 6.dp)
+                    ) {
+                        VerifiedBadge(size = 14.dp, iconSize = 9.dp)
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = strings.freeCreatorBadge,
-                            color = Color.White,
+                            text = strings.sessionPersistentNotice,
+                            color = Color(0xFFE0F7FF),
                             fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.Bold
                         )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Color(0x22FFFFFF))
+                            .border(1.dp, Color(0x45FFFFFF), RoundedCornerShape(20.dp))
+                            .padding(horizontal = 14.dp, vertical = 6.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Bolt,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = strings.freeCreatorBadge,
+                                color = Color.White,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 }
 

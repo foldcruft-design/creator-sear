@@ -17,3 +17,6 @@ data class UserEntity(
     val bandwidthSavedMb: Float = 0f,
     val avatarUri: String? = null
 )
+
+val UserEntity.isRegistered: Boolean
+    get() = passwordHash.isNotBlank() && id != "guest_creator_default" && !email.startsWith("guest")

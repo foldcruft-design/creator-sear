@@ -20,7 +20,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -299,6 +302,7 @@ fun GlassTextField(
     placeholder: String,
     modifier: Modifier = Modifier,
     leadingIcon: ImageVector? = null,
+    trailingIcon: (@Composable () -> Unit)? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default
@@ -351,6 +355,48 @@ fun GlassTextField(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+            if (trailingIcon != null) {
+                Spacer(modifier = Modifier.width(8.dp))
+                trailingIcon()
+            }
         }
     }
 }
+
+/**
+ * Noticeable glowing verified checkmark badge that indicates a registered creator account.
+ */
+@Composable
+fun VerifiedBadge(
+    modifier: Modifier = Modifier,
+    size: Dp = 16.dp,
+    iconSize: Dp = 10.dp,
+    showGlow: Boolean = true
+) {
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(Color(0xFF00E5FF), Color(0xFF0077FE))
+                )
+            )
+            .border(
+                BorderStroke(
+                    1.dp,
+                    if (showGlow) Color(0xD0FFFFFF) else Color(0x60FFFFFF)
+                ),
+                CircleShape
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Check,
+            contentDescription = "Verified Account",
+            tint = Color(0xFF04070D),
+            modifier = Modifier.size(iconSize)
+        )
+    }
+}
+
