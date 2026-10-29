@@ -58,6 +58,38 @@ enum class PresetType(
     )
 }
 
+object VideoResolutionPresets {
+    const val RES_1080P = "1080 × 1920"
+    const val RES_1440P = "1440 × 2560"
+    const val RES_4K = "2160 × 3840"
+
+    val ALL = listOf(RES_1080P, RES_1440P, RES_4K)
+
+    fun labelFor(res: String): String = when {
+        res.contains("2160") || res.contains("4K", ignoreCase = true) -> "4K UHD"
+        res.contains("1440") || res.contains("2K", ignoreCase = true) -> "2K QHD"
+        else -> "1080p FHD"
+    }
+
+    fun isProOnly(res: String): Boolean = res != RES_1080P
+}
+
+object VideoFpsPresets {
+    const val FPS_30 = 30
+    const val FPS_60 = 60
+    const val FPS_120 = 120
+
+    val ALL = listOf(FPS_30, FPS_60, FPS_120)
+
+    fun labelFor(fps: Int): String = when (fps) {
+        120 -> "120 FPS (120 Hz)"
+        60 -> "60 FPS Smooth"
+        else -> "30 FPS Cinema"
+    }
+
+    fun isProOnly(fps: Int): Boolean = fps == FPS_120
+}
+
 data class EnhanceSettings(
     val preset: PresetType = PresetType.TIKTOK_ULTRA,
     val sharpness: Int = 48,
@@ -70,8 +102,15 @@ data class EnhanceSettings(
     val vibrance: Int = 12,
     val targetBitrateMbps: Float = 14.5f,
     val targetFps: Int = 60,
-    val targetResolution: String = "1080 × 1920"
-)
+    val targetResolution: String = VideoResolutionPresets.RES_1080P,
+    val motionInterpolation120Hz: Boolean = true,
+    val deepMultiPass: Boolean = true,
+    val haloSuppression: Boolean = true
+) {
+    val is4k: Boolean get() = targetResolution == VideoResolutionPresets.RES_4K
+    val is1440p: Boolean get() = targetResolution == VideoResolutionPresets.RES_1440P
+    val is120Fps: Boolean get() = targetFps == 120
+}
 
 data class VideoItem(
     val uri: Uri,
@@ -100,12 +139,15 @@ data class VideoItem(
 }
 
 enum class ProcessingStage(val step: Int, val title: String, val detail: String) {
-    ANALYZING(1, "Анализ структуры потока", "Проверка цветовой субдискретизации, GOP-структуры и битрейта..."),
-    SHARPENING(2, "Адаптивная резкость", "Усиление контуров без ореолов (Halo Suppression)..."),
-    DYNAMIC_RANGE(3, "Калибровка теней & Градиентов", "Поднятие 0-15 IRE уровней и устранение бандинга..."),
-    COLOR_CALIBRATION(4, "Калибровка Rec.709", "Оптимизация контраста под экраны смартфонов..."),
-    ENCODING(5, "Сборка TikTok Sweet-Spot", "Запись оптимизированного MP4-контейнера..."),
-    COMPLETED(6, "Готово!", "Видео оптимизировано и готово к загрузке в Галерею.")
+    ANALYZING(1, "Скан GOP & структуры потока", "Анализ макроблоков, IDR ключевых кадров и джиттера таймингов..."),
+    MOTION_CADENCE(2, "Оптический поток & Анализ движения", "Расчёт векторов смещения и каденции развертки 120 Гц..."),
+    MOTION_SMOOTHING(3, "Интерполяция кадров 120 Hz", "Выравнивание межкадрового тайминга и устранение микрофризов..."),
+    SHARPENING(4, "Адаптивный Unsharp-Masking", "Субпиксельное усиление текстур без белых контурных ореолов..."),
+    DYNAMIC_RANGE(5, "Реконструкция теней (0-15 IRE)", "Подъём тёмных тонов и дизеринг градиентов без бандинга..."),
+    COLOR_CALIBRATION(6, "Калибровка Studio Rec.709", "Внедрение цветовых матриц BT.709 и нормализация гаммы..."),
+    ENCODING(7, "Сборка мастер-потока Sweet-Spot", "Запись MP4 с выравниванием fast-start и защитой битрейта..."),
+    VALIDATION(8, "Верификация 4K/120Hz для TikTok", "Финальная проверка битовой синхронизации и сжатия..."),
+    COMPLETED(9, "Готово!", "Видео профессионально оптимизировано и готово к сохранению.")
 }
 
 data class TikTokReadinessReport(
@@ -121,3 +163,4 @@ data class TikTokReadinessReport(
     val packetsRemuxed: Int = 240,
     val keyframesAligned: Int = 12
 )
+

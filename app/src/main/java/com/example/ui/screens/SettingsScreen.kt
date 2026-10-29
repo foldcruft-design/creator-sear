@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -63,14 +64,30 @@ fun SettingsScreen(
     strings: AppStrings,
     currentLanguage: AppLanguage,
     settings: EnhanceSettings,
+    isPro: Boolean = true,
     onLanguageChange: (AppLanguage) -> Unit,
     onSettingsChange: (EnhanceSettings) -> Unit,
+    onActivatePro: ((Boolean) -> Unit)? = null,
     onResetDefaults: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
     var cacheSizeText by remember { mutableStateOf(TikTokOptimizerEngine.getCacheSizeFormatted(context)) }
+    var showProDialog by remember { mutableStateOf(false) }
+
+    if (showProDialog) {
+        com.example.ui.components.ProSubscriptionDialog(
+            isPro = isPro,
+            strings = strings,
+            onActivatePro = { active ->
+                onActivatePro?.invoke(active)
+                showProDialog = false
+                Toast.makeText(context, strings.proActivatedToast, Toast.LENGTH_SHORT).show()
+            },
+            onDismiss = { showProDialog = false }
+        )
+    }
 
     BoxWithConstraints(
         modifier = modifier.fillMaxSize()
@@ -106,6 +123,80 @@ fun SettingsScreen(
                         fontSize = 12.sp,
                         lineHeight = 16.sp
                     )
+                }
+
+                // PRO Studio VIP Card
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color(0x2EFFFFFF), Color(0x12FFFFFF))
+                            )
+                        )
+                        .border(
+                            1.dp,
+                            Brush.verticalGradient(
+                                listOf(Color(0x70FFFFFF), Color(0x20FFFFFF))
+                            ),
+                            RoundedCornerShape(24.dp)
+                        )
+                        .padding(18.dp)
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0x25FFFFFF))
+                                        .border(1.dp, Color(0x60FFFFFF), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Tune,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = strings.proStudioTitle,
+                                        color = Color.White,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = if (isPro) strings.proActiveStatus else "4K UHD · 120 FPS · Optical Flow",
+                                        color = GlassTextMuted,
+                                        fontSize = 11.sp
+                                    )
+                                }
+                            }
+
+                            com.example.ui.components.ProBadge(
+                                text = if (isPro) "VIP" else "PRO",
+                                modifier = Modifier
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        GlassButton(
+                            text = if (isPro) strings.manageProBtn else strings.activateProBtn,
+                            isPrimary = true,
+                            onClick = { showProDialog = true },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
 
                 // 1. Language Selection Glass Card
@@ -152,6 +243,125 @@ fun SettingsScreen(
                     sectionLabel = strings.sectionEngineParams,
                     icon = Icons.Default.Tune
                 ) {
+                    // Output Resolution Selector (1080p / 2K / 4K)
+                    Text(
+                        text = strings.targetResolutionLabel,
+                        color = GlassTextSecondary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Color(0x10FFFFFF))
+                            .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(14.dp))
+                            .padding(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        GlassSegmentedOption(
+                            label = "1080p FHD",
+                            selected = settings.targetResolution == com.example.domain.model.VideoResolutionPresets.RES_1080P,
+                            onClick = {
+                                val autoBitrate = if (settings.targetFps == 120) 22.0f else if (settings.targetFps == 60) 15.5f else 12.0f
+                                onSettingsChange(
+                                    settings.copy(
+                                        targetResolution = com.example.domain.model.VideoResolutionPresets.RES_1080P,
+                                        targetBitrateMbps = autoBitrate
+                                    )
+                                )
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                        GlassSegmentedOption(
+                            label = "2K 1440p",
+                            badge = "PRO",
+                            selected = settings.targetResolution == com.example.domain.model.VideoResolutionPresets.RES_1440P,
+                            onClick = {
+                                if (!isPro) {
+                                    showProDialog = true
+                                } else {
+                                    val autoBitrate = if (settings.targetFps == 120) 42.0f else if (settings.targetFps == 60) 32.0f else 24.0f
+                                    onSettingsChange(
+                                        settings.copy(
+                                            targetResolution = com.example.domain.model.VideoResolutionPresets.RES_1440P,
+                                            targetBitrateMbps = autoBitrate
+                                        )
+                                    )
+                                }
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                        GlassSegmentedOption(
+                            label = "4K UHD",
+                            badge = "VIP",
+                            selected = settings.targetResolution == com.example.domain.model.VideoResolutionPresets.RES_4K,
+                            onClick = {
+                                if (!isPro) {
+                                    showProDialog = true
+                                } else {
+                                    val autoBitrate = if (settings.targetFps == 120) 75.0f else if (settings.targetFps == 60) 65.0f else 48.0f
+                                    onSettingsChange(
+                                        settings.copy(
+                                            targetResolution = com.example.domain.model.VideoResolutionPresets.RES_4K,
+                                            targetBitrateMbps = autoBitrate
+                                        )
+                                    )
+                                }
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Target Frame Rate Selector (30 FPS / 60 FPS / 120 FPS)
+                    Text(
+                        text = strings.targetFpsLabel,
+                        color = GlassTextSecondary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Color(0x10FFFFFF))
+                            .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(14.dp))
+                            .padding(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        GlassSegmentedOption(
+                            label = "30 FPS",
+                            selected = settings.targetFps == 30,
+                            onClick = { onSettingsChange(settings.copy(targetFps = 30)) },
+                            modifier = Modifier.weight(1f)
+                        )
+                        GlassSegmentedOption(
+                            label = "60 FPS",
+                            selected = settings.targetFps == 60,
+                            onClick = { onSettingsChange(settings.copy(targetFps = 60)) },
+                            modifier = Modifier.weight(1f)
+                        )
+                        GlassSegmentedOption(
+                            label = "120 FPS",
+                            badge = "120Hz",
+                            selected = settings.targetFps == 120,
+                            onClick = {
+                                if (!isPro) {
+                                    showProDialog = true
+                                } else {
+                                    onSettingsChange(settings.copy(targetFps = 120))
+                                }
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
                     // Sharpness Slider
                     GlassSlider(
                         value = settings.sharpness.toFloat(),
@@ -178,83 +388,18 @@ fun SettingsScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Bitrate Sweet-Spot Slider
+                    // Bitrate Sweet-Spot Slider (up to 85 Mbps for 4K / 120fps)
+                    val maxBitrate = if (settings.is4k) 85.0f else if (settings.is1440p) 55.0f else 28.0f
                     GlassSlider(
-                        value = settings.targetBitrateMbps,
+                        value = settings.targetBitrateMbps.coerceIn(8.0f, maxBitrate),
                         onValueChange = {
                             val rounded = (it * 10f).roundToInt() / 10f
                             onSettingsChange(settings.copy(targetBitrateMbps = rounded))
                         },
-                        valueRange = 10.0f..18.0f,
+                        valueRange = 8.0f..maxBitrate,
                         title = strings.bitrateSweetSpotLabel,
                         valueText = String.format(Locale.US, "%.1f Mbps", settings.targetBitrateMbps)
                     )
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // Target Frame Rate Selector (30 FPS / 60 FPS)
-                    Text(
-                        text = strings.targetFpsLabel,
-                        color = GlassTextSecondary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(Color(0x10FFFFFF))
-                            .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(14.dp))
-                            .padding(4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        GlassSegmentedOption(
-                            label = "30 FPS Cinema",
-                            selected = settings.targetFps == 30,
-                            onClick = { onSettingsChange(settings.copy(targetFps = 30)) },
-                            modifier = Modifier.weight(1f)
-                        )
-                        GlassSegmentedOption(
-                            label = "60 FPS Smooth",
-                            selected = settings.targetFps == 60,
-                            onClick = { onSettingsChange(settings.copy(targetFps = 60)) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // Output Resolution Selector
-                    Text(
-                        text = strings.targetResolutionLabel,
-                        color = GlassTextSecondary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(Color(0x10FFFFFF))
-                            .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(14.dp))
-                            .padding(4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        GlassSegmentedOption(
-                            label = "1080 × 1920 (FHD)",
-                            selected = settings.targetResolution.contains("1080"),
-                            onClick = { onSettingsChange(settings.copy(targetResolution = "1080 × 1920")) },
-                            modifier = Modifier.weight(1f)
-                        )
-                        GlassSegmentedOption(
-                            label = "1440 × 2560 (2K)",
-                            selected = settings.targetResolution.contains("1440"),
-                            onClick = { onSettingsChange(settings.copy(targetResolution = "1440 × 2560")) },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
                 }
 
                 // 3. Stream Modules & Automation Glass Card
@@ -269,6 +414,22 @@ fun SettingsScreen(
                             checked = settings.vfrToCfrStabilizer,
                             onCheckedChange = {
                                 onSettingsChange(settings.copy(vfrToCfrStabilizer = it))
+                            }
+                        )
+                        GlassToggleRow(
+                            title = "Оптический поток & Анализ движения (120 Hz)",
+                            subtitle = "Глубокий межкадровый анализ для устранения стробоскопического эффекта и плавности 120 Гц.",
+                            checked = settings.motionInterpolation120Hz,
+                            onCheckedChange = {
+                                onSettingsChange(settings.copy(motionInterpolation120Hz = it))
+                            }
+                        )
+                        GlassToggleRow(
+                            title = "Субпиксельное подавление ореолов (Halo Suppression)",
+                            subtitle = "Усиливает микротекстуры без белых контурных линий вокруг объектов.",
+                            checked = settings.haloSuppression,
+                            onCheckedChange = {
+                                onSettingsChange(settings.copy(haloSuppression = it))
                             }
                         )
                         GlassToggleRow(
@@ -429,6 +590,7 @@ private fun SettingsSectionCard(
 private fun GlassSegmentedOption(
     label: String,
     selected: Boolean,
+    badge: String? = null,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -442,15 +604,37 @@ private fun GlassSegmentedOption(
                 RoundedCornerShape(12.dp)
             )
             .clickable(onClick = onClick)
-            .padding(vertical = 10.dp, horizontal = 8.dp),
+            .padding(vertical = 10.dp, horizontal = 6.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = label,
-            color = if (selected) Color.White else GlassTextMuted,
-            fontSize = 12.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = label,
+                color = if (selected) Color.White else GlassTextMuted,
+                fontSize = 11.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
+            )
+            if (badge != null) {
+                Spacer(modifier = Modifier.width(4.dp))
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(if (selected) Color(0x40FFFFFF) else Color(0x18FFFFFF))
+                        .border(0.5.dp, Color(0x60FFFFFF), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                ) {
+                    Text(
+                        text = badge,
+                        color = Color.White,
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
     }
 }
 

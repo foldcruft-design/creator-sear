@@ -365,6 +365,7 @@ fun GlassTextField(
 
 /**
  * Noticeable glowing verified checkmark badge that indicates a registered creator account.
+ * Pure frosted glass styling without bright blue accents.
  */
 @Composable
 fun VerifiedBadge(
@@ -379,13 +380,13 @@ fun VerifiedBadge(
             .clip(CircleShape)
             .background(
                 Brush.linearGradient(
-                    colors = listOf(Color(0xFF00E5FF), Color(0xFF0077FE))
+                    colors = listOf(Color(0xE6FFFFFF), Color(0xB3E0E4EB))
                 )
             )
             .border(
                 BorderStroke(
                     1.dp,
-                    if (showGlow) Color(0xD0FFFFFF) else Color(0x60FFFFFF)
+                    if (showGlow) Color(0xFFFFFFFF) else Color(0x80FFFFFF)
                 ),
                 CircleShape
             ),
@@ -394,8 +395,38 @@ fun VerifiedBadge(
         Icon(
             imageVector = Icons.Filled.Check,
             contentDescription = "Verified Account",
-            tint = Color(0xFF04070D),
+            tint = Color(0xFF0A0C10),
             modifier = Modifier.size(iconSize)
+        )
+    }
+}
+
+/**
+ * Premium glass badge for PRO features (4K, 120 FPS, Ultra Mode)
+ */
+@Composable
+fun ProBadge(
+    text: String = "PRO",
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(
+                Brush.horizontalGradient(
+                    listOf(Color(0x30FFFFFF), Color(0x18FFFFFF))
+                )
+            )
+            .border(1.dp, Color(0x50FFFFFF), RoundedCornerShape(6.dp))
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = Color.White,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.5.sp
         )
     }
 }

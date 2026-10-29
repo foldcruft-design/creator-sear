@@ -205,15 +205,15 @@ fun ProfileDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
-                            .background(Color(0x2200E5FF))
-                            .border(1.dp, Color(0x7500E5FF), RoundedCornerShape(20.dp))
+                            .background(Color(0x28FFFFFF))
+                            .border(1.dp, Color(0x65FFFFFF), RoundedCornerShape(20.dp))
                             .padding(horizontal = 14.dp, vertical = 6.dp)
                     ) {
                         VerifiedBadge(size = 14.dp, iconSize = 9.dp)
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = strings.sessionPersistentNotice,
-                            color = Color(0xFFE0F7FF),
+                            color = Color.White,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         )

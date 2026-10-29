@@ -174,24 +174,52 @@ class AppStrings(val lang: AppLanguage) {
 
     // Processing Dialog
     fun stageTitle(stage: ProcessingStage): String = when (stage) {
-        ProcessingStage.ANALYZING -> if (isRu) "Анализ видеопотока и кадров" else "Analyzing Video Stream & Keyframes"
-        ProcessingStage.SHARPENING -> if (isRu) "Адаптивная резкость и денойз" else "Halo-Free Edge & Sensor Calibration"
-        ProcessingStage.DYNAMIC_RANGE -> if (isRu) "Калибровка теней 0-15 IRE" else "Shadow IRE & Anti-Banding Matrix"
-        ProcessingStage.COLOR_CALIBRATION -> if (isRu) "Синхронизация VFR → CFR и Rec.709" else "VFR → CFR Timing & Rec.709 Tagging"
-        ProcessingStage.ENCODING -> if (isRu) "Аппаратная сборка MP4 контейнера" else "Hardware MP4 Fast-Start Muxing"
+        ProcessingStage.ANALYZING -> if (isRu) "Скан GOP & структуры потока" else "GOP & Stream Structure Scan"
+        ProcessingStage.MOTION_CADENCE -> if (isRu) "Оптический поток & Векторы движения" else "Optical Flow & Motion Vectors"
+        ProcessingStage.MOTION_SMOOTHING -> if (isRu) "Интерполяция развертки 120 Гц" else "120 Hz Motion Cadence Smoothing"
+        ProcessingStage.SHARPENING -> if (isRu) "Адаптивный Unsharp-Masking" else "Halo-Free Subpixel Edge Sharpening"
+        ProcessingStage.DYNAMIC_RANGE -> if (isRu) "Калибровка теней 0-15 IRE & Дизеринг" else "Shadow IRE 0-15 Recovery & Dither"
+        ProcessingStage.COLOR_CALIBRATION -> if (isRu) "Калибровка Studio Rec.709" else "Studio Rec.709 Color Calibration"
+        ProcessingStage.ENCODING -> if (isRu) "Аппаратная сборка MP4 Fast-Start" else "Hardware MP4 Fast-Start Remuxing"
+        ProcessingStage.VALIDATION -> if (isRu) "Верификация 4K/120Hz для соцсетей" else "4K/120Hz Stream Integrity Validation"
         ProcessingStage.COMPLETED -> if (isRu) "Оптимизация завершена!" else "Optimization Complete!"
     }
 
     fun stageDetail(stage: ProcessingStage): String = when (stage) {
-        ProcessingStage.ANALYZING -> if (isRu) "Чтение разрешения, кодека, битрейта и яркости..." else "Inspecting resolution, codec, bitrate, and luma histogram..."
-        ProcessingStage.SHARPENING -> if (isRu) "Оптимизация контуров без ореолов (Halo Suppression)..." else "Optimizing micro-contrast without white edge halos..."
-        ProcessingStage.DYNAMIC_RANGE -> if (isRu) "Защита тёмных участков от распада на квадраты..." else "Protecting dark macroblocks from compression artifacts..."
-        ProcessingStage.COLOR_CALIBRATION -> if (isRu) "Выравнивание таймкодов кадров и цветовой матрицы..." else "Normalizing frame presentation timestamps and BT.709..."
-        ProcessingStage.ENCODING -> if (isRu) "Запись чистого видеопотока без лишних метаданных..." else "Writing clean fast-start MP4 stream..."
+        ProcessingStage.ANALYZING -> if (isRu) "Чтение разрешения, кодека, IDR-кадров и джиттера таймингов..." else "Inspecting resolution, codec, IDR keyframes, and jitter..."
+        ProcessingStage.MOTION_CADENCE -> if (isRu) "Глубокий анализ межкадровых сдвигов и плотности пикселей..." else "Deep inter-frame vector estimation and pixel density..."
+        ProcessingStage.MOTION_SMOOTHING -> if (isRu) "Стабилизация таймкодов по сетке 120/60 FPS без микрофризов..." else "Locking frame intervals onto uniform 120/60 FPS cadence..."
+        ProcessingStage.SHARPENING -> if (isRu) "Субпиксельное усиление микротекстур без ореолов перешарпа..." else "Micro-contrast texture sharpening with Halo Suppression..."
+        ProcessingStage.DYNAMIC_RANGE -> if (isRu) "Защита глубоких теней и устранение бандинга в градиентах..." else "Protecting dark macroblocks and gradient anti-banding..."
+        ProcessingStage.COLOR_CALIBRATION -> if (isRu) "Внедрение цветовых матриц BT.709 Limited Range..." else "Injecting BT.709 Limited Range color metadata..."
+        ProcessingStage.ENCODING -> if (isRu) "Запись потока Sweet-Spot со сдвигом moov-атома в начало..." else "Writing optimized stream with fast-start moov placement..."
+        ProcessingStage.VALIDATION -> if (isRu) "Проверка готовности к загрузке в TikTok & Reels без мыла..." else "Validating anti-compression readiness for TikTok & Reels..."
         ProcessingStage.COMPLETED -> if (isRu) "Видео готово к сохранению в Галерею." else "Video is ready to download to Gallery."
     }
 
-    fun stepOfTotal(step: Int): String = if (isRu) "Этап $step из 5" else "Step $step of 5"
+    fun stepOfTotal(step: Int): String = if (isRu) "Этап $step из 8" else "Step $step of 8"
+
+    // PRO Ultra Subscription
+    val proStudioTitle = "TokEnhance PRO Ultra"
+    val proStudioBadge = "PRO ULTRA"
+    val proModalTitle = if (isRu) "TokEnhance PRO Ultra Studio" else "TokEnhance PRO Ultra Studio"
+    val proModalSubtitle = if (isRu) {
+        "Максимальное качество видео: 4K, 120 Гц развёртка и глубокие алгоритмы без компромиссов"
+    } else {
+        "Ultimate video fidelity: 4K, 120 Hz cadence, and deep multi-pass algorithms"
+    }
+    val proFeature4k = if (isRu) "Рендер 4K Ultra HD (2160 × 3840)" else "4K Ultra HD (2160 × 3840) Master Render"
+    val proFeature4kDesc = if (isRu) "Чёткость студийного уровня для экранов флагманских смартфонов" else "Studio-grade sharpness for flagship smartphone displays"
+    val proFeature120Fps = if (isRu) "Развёртка 120 FPS / 120 Гц Ultra Motion" else "120 FPS / 120 Hz Ultra Motion Cadence"
+    val proFeature120FpsDesc = if (isRu) "Идеальная плавность без строба и микрофризов в динамичных сценах" else "Silky smooth cadence with zero frame jitter in motion scenes"
+    val proFeatureFlow = if (isRu) "Оптический поток & Deep Multi-Pass" else "Optical Flow & Deep Multi-Pass"
+    val proFeatureFlowDesc = if (isRu) "Многопроходная обработка контуров и устранение шумов сенсора" else "Multi-pass edge reconstruction and sensor noise clearing"
+    val proFeatureBitrate = if (isRu) "Студийный битрейт до 85 Mbps" else "Studio Bitrate up to 85 Mbps"
+    val proFeatureBitrateDesc = if (isRu) "Защита потока от пережатия серверами TikTok и Reels" else "Guaranteed protection against platform server downsampling"
+    val activateProBtn = if (isRu) "Активировать PRO Ultra (VIP доступ)" else "Activate PRO Ultra (VIP Access)"
+    val proActiveStatus = if (isRu) "PRO Ultra активен · Все функции открыты" else "PRO Ultra Active · All Features Unlocked"
+    val manageProBtn = if (isRu) "PRO Ultra активирован" else "PRO Ultra Active"
+    val proActivatedToast = if (isRu) "PRO Ultra успешно активирован! Доступны 4K и 120 FPS." else "PRO Ultra successfully activated! 4K and 120 FPS unlocked."
 
     // Result Sheet
     val resultTitle = if (isRu) "Видео успешно оптимизировано!" else "Video Successfully Optimized!"

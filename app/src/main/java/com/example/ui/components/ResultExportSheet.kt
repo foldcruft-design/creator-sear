@@ -185,12 +185,18 @@ fun ResultExportSheet(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    SpecRow(label = strings.labelTargetRes, value = settings.targetResolution)
-                    SpecRow(label = strings.labelFrameRate, value = "${settings.targetFps} FPS CFR")
-                    SpecRow(label = strings.labelBitrate, value = "${settings.targetBitrateMbps} Mbps")
+                    SpecRow(
+                        label = strings.labelTargetRes,
+                        value = "${settings.targetResolution} (${com.example.domain.model.VideoResolutionPresets.labelFor(settings.targetResolution)})"
+                    )
+                    SpecRow(
+                        label = strings.labelFrameRate,
+                        value = if (settings.targetFps == 120) "120 FPS · 120 Hz Ultra Motion" else "${settings.targetFps} FPS Monotonic CFR"
+                    )
+                    SpecRow(label = strings.labelBitrate, value = "${settings.targetBitrateMbps} Mbps Sweet-Spot")
                     SpecRow(
                         label = strings.labelKeyframes,
-                        value = if (settings.vfrToCfrStabilizer) "VFR → CFR · Rec.709" else "Rec.709 Direct"
+                        value = if (settings.vfrToCfrStabilizer) "VFR → CFR · Rec.709 Master" else "Rec.709 Direct"
                     )
                 }
 

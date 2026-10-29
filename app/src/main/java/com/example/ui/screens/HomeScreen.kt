@@ -116,6 +116,7 @@ fun HomeScreen(
     val currentUser by authRepository.currentUser.collectAsState()
     val currentLanguage by activeSettingsRepo.language.collectAsState()
     val enhanceSettings by activeSettingsRepo.settings.collectAsState()
+    val isPro by activeSettingsRepo.isProSubscriber.collectAsState()
 
     val strings = remember(currentLanguage) { AppStrings(currentLanguage) }
 
@@ -131,6 +132,7 @@ fun HomeScreen(
     var showProfileDialog by remember { mutableStateOf(false) }
     var showProcessingDialog by remember { mutableStateOf(false) }
     var showResultSheet by remember { mutableStateOf(false) }
+    var showProDialog by remember { mutableStateOf(false) }
 
     // Processing state
     var processingStage by remember { mutableStateOf(ProcessingStage.ANALYZING) }
@@ -217,6 +219,11 @@ fun HomeScreen(
                             settings = enhanceSettings,
                             enhancedFile = enhancedFile,
                             savedGalleryPath = savedGalleryPath,
+                            isPro = isPro,
+                            onOpenProModal = { showProDialog = true },
+                            onSelectResolutionAndFps = { res, fps ->
+                                activeSettingsRepo.setTargetResolutionAndFps(res, fps)
+                            },
                             onVfrToggle = { enabled ->
                                 activeSettingsRepo.updateSettings(
                                     enhanceSettings.copy(vfrToCfrStabilizer = enabled)
@@ -357,11 +364,15 @@ fun HomeScreen(
                             strings = strings,
                             currentLanguage = currentLanguage,
                             settings = enhanceSettings,
+                            isPro = isPro,
                             onLanguageChange = { lang ->
                                 activeSettingsRepo.setLanguage(lang)
                             },
                             onSettingsChange = { updated ->
                                 activeSettingsRepo.updateSettings(updated)
+                            },
+                            onActivatePro = { active ->
+                                activeSettingsRepo.setProSubscriber(active)
                             },
                             onResetDefaults = {
                                 activeSettingsRepo.resetToDefaults()
@@ -398,6 +409,19 @@ fun HomeScreen(
                 onTabSelected = { currentTab = it }
             )
         }
+    }
+
+    if (showProDialog) {
+        com.example.ui.components.ProSubscriptionDialog(
+            isPro = isPro,
+            strings = strings,
+            onActivatePro = { active ->
+                activeSettingsRepo.setProSubscriber(active)
+                showProDialog = false
+                Toast.makeText(context, strings.proActivatedToast, Toast.LENGTH_SHORT).show()
+            },
+            onDismiss = { showProDialog = false }
+        )
     }
 
     if (showAuthDialog) {
@@ -553,7 +577,7 @@ private fun TopBar(
         // Profile Pill with Prominent Verified Checkmark
         val isRegistered = user != null && user.isRegistered
         val pillBorder = if (isRegistered) {
-            Brush.horizontalGradient(listOf(Color(0xFF00E5FF), Color(0x60FFFFFF)))
+            Brush.horizontalGradient(listOf(Color(0xD0FFFFFF), Color(0x60FFFFFF)))
         } else {
             Brush.verticalGradient(listOf(Color(0x35FFFFFF), Color(0x15FFFFFF)))
         }
@@ -562,7 +586,7 @@ private fun TopBar(
             modifier = Modifier
                 .height(34.dp)
                 .clip(RoundedCornerShape(17.dp))
-                .background(if (isRegistered) Color(0x2800E5FF) else Color(0x18FFFFFF))
+                .background(if (isRegistered) Color(0x2EFFFFFF) else Color(0x18FFFFFF))
                 .border(if (isRegistered) 1.2.dp else 1.dp, pillBorder, RoundedCornerShape(17.dp))
                 .clickable(onClick = onUserClick)
                 .padding(horizontal = 9.dp)
@@ -627,6 +651,9 @@ private fun OptimizerZilemContent(
     settings: EnhanceSettings,
     enhancedFile: File?,
     savedGalleryPath: String?,
+    isPro: Boolean = true,
+    onOpenProModal: () -> Unit,
+    onSelectResolutionAndFps: (String, Int) -> Unit,
     onVfrToggle: (Boolean) -> Unit,
     onOpenSettingsTab: () -> Unit,
     onUploadClick: () -> Unit,
@@ -679,9 +706,9 @@ private fun OptimizerZilemContent(
                     modifier = Modifier.padding(horizontal = 10.dp)
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-                // The Central Glass Optimizer Card (Clean, no Ultra 1/2/3 clutter, no paid badges)
+                // The Central Glass Optimizer Card
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -701,7 +728,7 @@ private fun OptimizerZilemContent(
                     Column(
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        // Active Pipeline Summary Row (Quick jump to Settings tab)
+                        // Active Pipeline Summary & Quick Mode Tag
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -740,6 +767,108 @@ private fun OptimizerZilemContent(
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Interactive Quick Quality Mode Selector: 1080p / 2K / 4K and 30 / 60 / 120 FPS
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(Color(0x0DFFFFFF))
+                                .border(1.dp, Color(0x1AFFFFFF), RoundedCornerShape(16.dp))
+                                .padding(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            // Resolution Selector Row
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                QuickQualityChip(
+                                    label = "1080p FHD",
+                                    selected = settings.targetResolution == com.example.domain.model.VideoResolutionPresets.RES_1080P,
+                                    badge = null,
+                                    onClick = {
+                                        onSelectResolutionAndFps(
+                                            com.example.domain.model.VideoResolutionPresets.RES_1080P,
+                                            settings.targetFps
+                                        )
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                )
+                                QuickQualityChip(
+                                    label = "2K 1440p",
+                                    selected = settings.targetResolution == com.example.domain.model.VideoResolutionPresets.RES_1440P,
+                                    badge = "PRO",
+                                    onClick = {
+                                        if (!isPro) onOpenProModal()
+                                        else onSelectResolutionAndFps(
+                                            com.example.domain.model.VideoResolutionPresets.RES_1440P,
+                                            settings.targetFps
+                                        )
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                )
+                                QuickQualityChip(
+                                    label = "4K UHD",
+                                    selected = settings.targetResolution == com.example.domain.model.VideoResolutionPresets.RES_4K,
+                                    badge = "VIP",
+                                    onClick = {
+                                        if (!isPro) onOpenProModal()
+                                        else onSelectResolutionAndFps(
+                                            com.example.domain.model.VideoResolutionPresets.RES_4K,
+                                            settings.targetFps
+                                        )
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+
+                            // FPS Selector Row
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                QuickQualityChip(
+                                    label = "30 FPS",
+                                    selected = settings.targetFps == 30,
+                                    badge = null,
+                                    onClick = {
+                                        onSelectResolutionAndFps(
+                                            settings.targetResolution,
+                                            30
+                                        )
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                )
+                                QuickQualityChip(
+                                    label = "60 FPS",
+                                    selected = settings.targetFps == 60,
+                                    badge = null,
+                                    onClick = {
+                                        onSelectResolutionAndFps(
+                                            settings.targetResolution,
+                                            60
+                                        )
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                )
+                                QuickQualityChip(
+                                    label = "120 FPS",
+                                    selected = settings.targetFps == 120,
+                                    badge = "120Hz",
+                                    onClick = {
+                                        if (!isPro) onOpenProModal()
+                                        else onSelectResolutionAndFps(
+                                            settings.targetResolution,
+                                            120
+                                        )
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(14.dp))
@@ -1338,15 +1467,15 @@ private fun ProfileScreenContent(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0x2400E5FF))
-                    .border(1.dp, Color(0x7500E5FF), RoundedCornerShape(16.dp))
+                    .background(Color(0x28FFFFFF))
+                    .border(1.dp, Color(0x65FFFFFF), RoundedCornerShape(16.dp))
                     .padding(horizontal = 14.dp, vertical = 6.dp)
             ) {
                 VerifiedBadge(size = 14.dp, iconSize = 9.dp)
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = strings.sessionPersistentNotice,
-                    color = Color(0xFFE0F7FF),
+                    color = Color.White,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -1522,7 +1651,7 @@ private fun NavTabItem(
                         modifier = Modifier
                             .size(7.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFF00E5FF))
+                            .background(Color(0xFFFFFFFF))
                             .border(1.dp, Color(0xFF0A0C10), CircleShape)
                             .align(Alignment.TopEnd)
                     )
@@ -1537,6 +1666,58 @@ private fun NavTabItem(
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuickQualityChip(
+    label: String,
+    selected: Boolean,
+    badge: String? = null,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(if (selected) Color(0x38FFFFFF) else Color(0x10FFFFFF))
+            .border(
+                1.dp,
+                if (selected) Color(0x75FFFFFF) else Color(0x1EFFFFFF),
+                RoundedCornerShape(10.dp)
+            )
+            .clickable(onClick = onClick)
+            .padding(vertical = 7.dp, horizontal = 4.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = label,
+                color = if (selected) Color.White else GlassTextMuted,
+                fontSize = 11.sp,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+            )
+            if (badge != null) {
+                Spacer(modifier = Modifier.width(4.dp))
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(if (selected) Color(0x40FFFFFF) else Color(0x20FFFFFF))
+                        .border(0.5.dp, Color(0x60FFFFFF), RoundedCornerShape(4.dp))
+                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                ) {
+                    Text(
+                        text = badge,
+                        color = Color.White,
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }

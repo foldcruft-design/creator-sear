@@ -149,7 +149,7 @@ fun ProcessingDialog(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = strings.stepOfTotal(currentStage.step.coerceAtMost(5)),
+                            text = strings.stepOfTotal(currentStage.step.coerceAtMost(8)),
                             color = GlassTextMuted,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium
