@@ -71,7 +71,11 @@ object VideoResolutionPresets {
         else -> "1080p FHD"
     }
 
-    fun isProOnly(res: String): Boolean = res != RES_1080P
+    fun dimensionsFor(res: String): Pair<Int, Int> = when {
+        res.contains("2160") || res.contains("4K", ignoreCase = true) -> Pair(2160, 3840)
+        res.contains("1440") || res.contains("2K", ignoreCase = true) -> Pair(1440, 2560)
+        else -> Pair(1080, 1920)
+    }
 }
 
 object VideoFpsPresets {
@@ -86,8 +90,6 @@ object VideoFpsPresets {
         60 -> "60 FPS Smooth"
         else -> "30 FPS Cinema"
     }
-
-    fun isProOnly(fps: Int): Boolean = fps == FPS_120
 }
 
 data class EnhanceSettings(

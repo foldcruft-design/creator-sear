@@ -199,28 +199,6 @@ class AppStrings(val lang: AppLanguage) {
 
     fun stepOfTotal(step: Int): String = if (isRu) "Этап $step из 8" else "Step $step of 8"
 
-    // PRO Ultra Subscription
-    val proStudioTitle = "TokEnhance PRO Ultra"
-    val proStudioBadge = "PRO ULTRA"
-    val proModalTitle = if (isRu) "TokEnhance PRO Ultra Studio" else "TokEnhance PRO Ultra Studio"
-    val proModalSubtitle = if (isRu) {
-        "Максимальное качество видео: 4K, 120 Гц развёртка и глубокие алгоритмы без компромиссов"
-    } else {
-        "Ultimate video fidelity: 4K, 120 Hz cadence, and deep multi-pass algorithms"
-    }
-    val proFeature4k = if (isRu) "Рендер 4K Ultra HD (2160 × 3840)" else "4K Ultra HD (2160 × 3840) Master Render"
-    val proFeature4kDesc = if (isRu) "Чёткость студийного уровня для экранов флагманских смартфонов" else "Studio-grade sharpness for flagship smartphone displays"
-    val proFeature120Fps = if (isRu) "Развёртка 120 FPS / 120 Гц Ultra Motion" else "120 FPS / 120 Hz Ultra Motion Cadence"
-    val proFeature120FpsDesc = if (isRu) "Идеальная плавность без строба и микрофризов в динамичных сценах" else "Silky smooth cadence with zero frame jitter in motion scenes"
-    val proFeatureFlow = if (isRu) "Оптический поток & Deep Multi-Pass" else "Optical Flow & Deep Multi-Pass"
-    val proFeatureFlowDesc = if (isRu) "Многопроходная обработка контуров и устранение шумов сенсора" else "Multi-pass edge reconstruction and sensor noise clearing"
-    val proFeatureBitrate = if (isRu) "Студийный битрейт до 85 Mbps" else "Studio Bitrate up to 85 Mbps"
-    val proFeatureBitrateDesc = if (isRu) "Защита потока от пережатия серверами TikTok и Reels" else "Guaranteed protection against platform server downsampling"
-    val activateProBtn = if (isRu) "Активировать PRO Ultra (VIP доступ)" else "Activate PRO Ultra (VIP Access)"
-    val proActiveStatus = if (isRu) "PRO Ultra активен · Все функции открыты" else "PRO Ultra Active · All Features Unlocked"
-    val manageProBtn = if (isRu) "PRO Ultra активирован" else "PRO Ultra Active"
-    val proActivatedToast = if (isRu) "PRO Ultra успешно активирован! Доступны 4K и 120 FPS." else "PRO Ultra successfully activated! 4K and 120 FPS unlocked."
-
     // Result Sheet
     val resultTitle = if (isRu) "Видео успешно оптимизировано!" else "Video Successfully Optimized!"
     val resultSubtitle = if (isRu) "Поток откалиброван для загрузки без потери качества" else "Stream calibrated for lossless social media upload"
@@ -247,9 +225,9 @@ class AppStrings(val lang: AppLanguage) {
     val freeCreatorBadge = if (isRu) "Все функции открыты · Бесплатно" else "All Features Unlocked · Free"
     val profilePassTitle = if (isRu) "Движок защиты качества активен" else "Anti-Compression Engine Active"
     val profilePassDesc = if (isRu) {
-        "Все алгоритмы стабилизации потока, Rec.709 калибровки и сохранения в Галерею доступны бесплатно и без ограничений."
+        "Все алгоритмы 1080p / 2K / 4K, 30 / 60 / 120 FPS, стабилизации потока, Rec.709 калибровки и сохранения в Галерею доступны бесплатно."
     } else {
-        "All stream stabilization, VFR-to-CFR normalization, Rec.709 calibration, and Gallery export features are 100% free and unlocked."
+        "All 1080p / 2K / 4K, 30 / 60 / 120 FPS, stream stabilization, VFR-to-CFR normalization, Rec.709 calibration, and Gallery export features are 100% free."
     }
     val statVideosProcessed = if (isRu) "Обработано видео" else "Videos Optimized"
     val statProtectionIndex = if (isRu) "Индекс защиты" else "Protection Score"
@@ -265,24 +243,23 @@ class AppStrings(val lang: AppLanguage) {
     val placeholderUsername = if (isRu) "Имя автора / Никнейм" else "Creator Name / Username"
     val placeholderEmail = "Email (creator@tok.io)"
     val placeholderPassword = if (isRu) "Пароль (от 4 символов)" else "Password (min 4 chars)"
-    val submitSignUp = if (isRu) "Зарегистрироваться" else "Create Profile"
+    val submitSignUp = if (isRu) "Зарегистрироваться" else "Complete Sign Up"
     val submitSignIn = if (isRu) "Войти в профиль" else "Sign In"
     val continueGuest = if (isRu) "Продолжить без регистрации" else "Continue as Guest"
 
     val verifiedAccountBadge = if (isRu) "Подтверждённый автор" else "Verified Creator"
-    val verifiedAccountSub = if (isRu) "Галочка активирована перед ником" else "Checkmark badge active in front of username"
+    val verifiedAccountSub = if (isRu) "Активировать галочку автора в профиле" else "Enable creator checkmark badge in profile"
     val sessionPersistentNotice = if (isRu) "Сессия сохранена · Вход постоянный" else "Persistent session · Saved"
     val regSuccessTitle = if (isRu) "Регистрация успешна!" else "Registration Successful!"
     val regSuccessDesc = if (isRu) {
-        "Галочка автора активирована перед вашим ником и сохранится даже после закрытия приложения."
+        "Профиль автора успешно создан и сохранён на устройстве."
     } else {
-        "Creator checkmark badge is active in front of your nickname and saved permanently."
+        "Creator profile created and saved permanently on your device."
     }
     val avatarPickerHeader = if (isRu) "Выберите аватарку профиля" else "Choose profile avatar"
     val avatarFromGallery = if (isRu) "Своё фото" else "Upload photo"
     val passwordWeak = if (isRu) "Короткий" else "Too short"
     val passwordMedium = if (isRu) "Надёжный" else "Good"
     val passwordStrong = if (isRu) "Отличный" else "Strong"
-    val verifiedPillTip = if (isRu) "✓ Галочка появится перед ником сразу после регистрации" else "✓ Verified badge appears before nickname upon registration"
 }
 

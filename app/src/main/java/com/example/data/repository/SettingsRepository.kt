@@ -19,9 +19,6 @@ class SettingsRepository(context: Context) {
     private val _settings = MutableStateFlow(loadSettings())
     val settings: StateFlow<EnhanceSettings> = _settings.asStateFlow()
 
-    private val _isProSubscriber = MutableStateFlow(prefs.getBoolean("is_pro_subscriber", true))
-    val isProSubscriber: StateFlow<Boolean> = _isProSubscriber.asStateFlow()
-
     private fun loadLanguage(): AppLanguage {
         val code = prefs.getString("app_language", AppLanguage.RU.code) ?: AppLanguage.RU.code
         return AppLanguage.fromCode(code)
@@ -49,11 +46,6 @@ class SettingsRepository(context: Context) {
     fun setLanguage(lang: AppLanguage) {
         _language.value = lang
         prefs.edit().putString("app_language", lang.code).apply()
-    }
-
-    fun setProSubscriber(active: Boolean) {
-        _isProSubscriber.value = active
-        prefs.edit().putBoolean("is_pro_subscriber", active).apply()
     }
 
     fun updateSettings(newSettings: EnhanceSettings) {

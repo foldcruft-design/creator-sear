@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -46,12 +45,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.domain.engine.TikTokOptimizerEngine
 import com.example.domain.model.AppLanguage
 import com.example.domain.model.AppStrings
 import com.example.domain.model.EnhanceSettings
+import com.example.domain.model.VideoResolutionPresets
 import com.example.ui.components.GlassButton
 import com.example.ui.components.GlassSlider
 import com.example.ui.theme.GlassTextMuted
@@ -64,30 +66,14 @@ fun SettingsScreen(
     strings: AppStrings,
     currentLanguage: AppLanguage,
     settings: EnhanceSettings,
-    isPro: Boolean = true,
     onLanguageChange: (AppLanguage) -> Unit,
     onSettingsChange: (EnhanceSettings) -> Unit,
-    onActivatePro: ((Boolean) -> Unit)? = null,
     onResetDefaults: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
     var cacheSizeText by remember { mutableStateOf(TikTokOptimizerEngine.getCacheSizeFormatted(context)) }
-    var showProDialog by remember { mutableStateOf(false) }
-
-    if (showProDialog) {
-        com.example.ui.components.ProSubscriptionDialog(
-            isPro = isPro,
-            strings = strings,
-            onActivatePro = { active ->
-                onActivatePro?.invoke(active)
-                showProDialog = false
-                Toast.makeText(context, strings.proActivatedToast, Toast.LENGTH_SHORT).show()
-            },
-            onDismiss = { showProDialog = false }
-        )
-    }
 
     BoxWithConstraints(
         modifier = modifier.fillMaxSize()
@@ -106,7 +92,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .widthIn(max = 520.dp)
                     .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(18.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Header
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -123,80 +109,6 @@ fun SettingsScreen(
                         fontSize = 12.sp,
                         lineHeight = 16.sp
                     )
-                }
-
-                // PRO Studio VIP Card
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(Color(0x2EFFFFFF), Color(0x12FFFFFF))
-                            )
-                        )
-                        .border(
-                            1.dp,
-                            Brush.verticalGradient(
-                                listOf(Color(0x70FFFFFF), Color(0x20FFFFFF))
-                            ),
-                            RoundedCornerShape(24.dp)
-                        )
-                        .padding(18.dp)
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0x25FFFFFF))
-                                        .border(1.dp, Color(0x60FFFFFF), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Tune,
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Column {
-                                    Text(
-                                        text = strings.proStudioTitle,
-                                        color = Color.White,
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = if (isPro) strings.proActiveStatus else "4K UHD · 120 FPS · Optical Flow",
-                                        color = GlassTextMuted,
-                                        fontSize = 11.sp
-                                    )
-                                }
-                            }
-
-                            com.example.ui.components.ProBadge(
-                                text = if (isPro) "VIP" else "PRO",
-                                modifier = Modifier
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        GlassButton(
-                            text = if (isPro) strings.manageProBtn else strings.activateProBtn,
-                            isPrimary = true,
-                            onClick = { showProDialog = true },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
                 }
 
                 // 1. Language Selection Glass Card
@@ -216,7 +128,7 @@ fun SettingsScreen(
                             .clip(RoundedCornerShape(16.dp))
                             .background(Color(0x12FFFFFF))
                             .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(16.dp))
-                            .padding(4.dp),
+                            .padding(5.dp),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         GlassSegmentedOption(
@@ -243,7 +155,7 @@ fun SettingsScreen(
                     sectionLabel = strings.sectionEngineParams,
                     icon = Icons.Default.Tune
                 ) {
-                    // Output Resolution Selector (1080p / 2K / 4K)
+                    // Output Resolution Selector (1080p / 2K / 4K) — Uniform Free Glass Buttons
                     Text(
                         text = strings.targetResolutionLabel,
                         color = GlassTextSecondary,
@@ -254,20 +166,24 @@ fun SettingsScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
+                            .clip(RoundedCornerShape(16.dp))
                             .background(Color(0x10FFFFFF))
-                            .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(14.dp))
-                            .padding(4.dp),
+                            .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(16.dp))
+                            .padding(5.dp),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         GlassSegmentedOption(
-                            label = "1080p FHD",
-                            selected = settings.targetResolution == com.example.domain.model.VideoResolutionPresets.RES_1080P,
+                            label = "1080p",
+                            selected = settings.targetResolution == VideoResolutionPresets.RES_1080P,
                             onClick = {
-                                val autoBitrate = if (settings.targetFps == 120) 22.0f else if (settings.targetFps == 60) 15.5f else 12.0f
+                                val autoBitrate = when (settings.targetFps) {
+                                    120 -> 24.0f
+                                    60 -> 16.0f
+                                    else -> 12.0f
+                                }
                                 onSettingsChange(
                                     settings.copy(
-                                        targetResolution = com.example.domain.model.VideoResolutionPresets.RES_1080P,
+                                        targetResolution = VideoResolutionPresets.RES_1080P,
                                         targetBitrateMbps = autoBitrate
                                     )
                                 )
@@ -276,39 +192,37 @@ fun SettingsScreen(
                         )
                         GlassSegmentedOption(
                             label = "2K 1440p",
-                            badge = "PRO",
-                            selected = settings.targetResolution == com.example.domain.model.VideoResolutionPresets.RES_1440P,
+                            selected = settings.targetResolution == VideoResolutionPresets.RES_1440P,
                             onClick = {
-                                if (!isPro) {
-                                    showProDialog = true
-                                } else {
-                                    val autoBitrate = if (settings.targetFps == 120) 42.0f else if (settings.targetFps == 60) 32.0f else 24.0f
-                                    onSettingsChange(
-                                        settings.copy(
-                                            targetResolution = com.example.domain.model.VideoResolutionPresets.RES_1440P,
-                                            targetBitrateMbps = autoBitrate
-                                        )
-                                    )
+                                val autoBitrate = when (settings.targetFps) {
+                                    120 -> 42.0f
+                                    60 -> 32.0f
+                                    else -> 24.0f
                                 }
+                                onSettingsChange(
+                                    settings.copy(
+                                        targetResolution = VideoResolutionPresets.RES_1440P,
+                                        targetBitrateMbps = autoBitrate
+                                    )
+                                )
                             },
                             modifier = Modifier.weight(1f)
                         )
                         GlassSegmentedOption(
                             label = "4K UHD",
-                            badge = "VIP",
-                            selected = settings.targetResolution == com.example.domain.model.VideoResolutionPresets.RES_4K,
+                            selected = settings.targetResolution == VideoResolutionPresets.RES_4K,
                             onClick = {
-                                if (!isPro) {
-                                    showProDialog = true
-                                } else {
-                                    val autoBitrate = if (settings.targetFps == 120) 75.0f else if (settings.targetFps == 60) 65.0f else 48.0f
-                                    onSettingsChange(
-                                        settings.copy(
-                                            targetResolution = com.example.domain.model.VideoResolutionPresets.RES_4K,
-                                            targetBitrateMbps = autoBitrate
-                                        )
-                                    )
+                                val autoBitrate = when (settings.targetFps) {
+                                    120 -> 75.0f
+                                    60 -> 65.0f
+                                    else -> 48.0f
                                 }
+                                onSettingsChange(
+                                    settings.copy(
+                                        targetResolution = VideoResolutionPresets.RES_4K,
+                                        targetBitrateMbps = autoBitrate
+                                    )
+                                )
                             },
                             modifier = Modifier.weight(1f)
                         )
@@ -316,7 +230,7 @@ fun SettingsScreen(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    // Target Frame Rate Selector (30 FPS / 60 FPS / 120 FPS)
+                    // Target Frame Rate Selector (30 FPS / 60 FPS / 120 FPS) — Uniform Free Glass Buttons
                     Text(
                         text = strings.targetFpsLabel,
                         color = GlassTextSecondary,
@@ -327,10 +241,10 @@ fun SettingsScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
+                            .clip(RoundedCornerShape(16.dp))
                             .background(Color(0x10FFFFFF))
-                            .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(14.dp))
-                            .padding(4.dp),
+                            .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(16.dp))
+                            .padding(5.dp),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         GlassSegmentedOption(
@@ -347,15 +261,8 @@ fun SettingsScreen(
                         )
                         GlassSegmentedOption(
                             label = "120 FPS",
-                            badge = "120Hz",
                             selected = settings.targetFps == 120,
-                            onClick = {
-                                if (!isPro) {
-                                    showProDialog = true
-                                } else {
-                                    onSettingsChange(settings.copy(targetFps = 120))
-                                }
-                            },
+                            onClick = { onSettingsChange(settings.copy(targetFps = 120)) },
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -417,16 +324,24 @@ fun SettingsScreen(
                             }
                         )
                         GlassToggleRow(
-                            title = "Оптический поток & Анализ движения (120 Hz)",
-                            subtitle = "Глубокий межкадровый анализ для устранения стробоскопического эффекта и плавности 120 Гц.",
+                            title = if (strings.isRu) "Оптический поток & Развёртка 120 Гц" else "Optical Flow & 120 Hz Cadence",
+                            subtitle = if (strings.isRu) {
+                                "Межкадровая калибровка таймингов и генерация промежуточных кадров для честных 60 / 120 FPS."
+                            } else {
+                                "Inter-frame cadence calibration and frame synthesis for true 60 / 120 FPS output."
+                            },
                             checked = settings.motionInterpolation120Hz,
                             onCheckedChange = {
                                 onSettingsChange(settings.copy(motionInterpolation120Hz = it))
                             }
                         )
                         GlassToggleRow(
-                            title = "Субпиксельное подавление ореолов (Halo Suppression)",
-                            subtitle = "Усиливает микротекстуры без белых контурных линий вокруг объектов.",
+                            title = if (strings.isRu) "Подавление ореолов (Halo Suppression)" else "Subpixel Halo Suppression",
+                            subtitle = if (strings.isRu) {
+                                "Усиливает микротекстуры и контуры без белых полос вокруг объектов."
+                            } else {
+                                "Enhances micro-textures and edges without white ringing halos."
+                            },
                             checked = settings.haloSuppression,
                             onCheckedChange = {
                                 onSettingsChange(settings.copy(haloSuppression = it))
@@ -477,6 +392,7 @@ fun SettingsScreen(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(14.dp))
                             .background(Color(0x10FFFFFF))
+                            .border(1.dp, Color(0x1EFFFFFF), RoundedCornerShape(14.dp))
                             .padding(horizontal = 14.dp, vertical = 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
@@ -576,7 +492,9 @@ private fun SettingsSectionCard(
                     color = Color.White,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.8.sp
+                    letterSpacing = 0.8.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
@@ -590,51 +508,39 @@ private fun SettingsSectionCard(
 private fun GlassSegmentedOption(
     label: String,
     selected: Boolean,
-    badge: String? = null,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier
+            .height(44.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(if (selected) Color(0x35FFFFFF) else Color.Transparent)
+            .background(
+                if (selected) {
+                    Brush.verticalGradient(listOf(Color(0x3DFFFFFF), Color(0x22FFFFFF)))
+                } else {
+                    Brush.verticalGradient(listOf(Color(0x08FFFFFF), Color(0x04FFFFFF)))
+                }
+            )
             .border(
                 1.dp,
-                if (selected) Color(0x70FFFFFF) else Color.Transparent,
+                if (selected) Color(0x75FFFFFF) else Color(0x16FFFFFF),
                 RoundedCornerShape(12.dp)
             )
             .clickable(onClick = onClick)
-            .padding(vertical = 10.dp, horizontal = 6.dp),
+            .padding(horizontal = 8.dp),
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = label,
-                color = if (selected) Color.White else GlassTextMuted,
-                fontSize = 11.sp,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
-            )
-            if (badge != null) {
-                Spacer(modifier = Modifier.width(4.dp))
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(if (selected) Color(0x40FFFFFF) else Color(0x18FFFFFF))
-                        .border(0.5.dp, Color(0x60FFFFFF), RoundedCornerShape(4.dp))
-                        .padding(horizontal = 4.dp, vertical = 1.dp)
-                ) {
-                    Text(
-                        text = badge,
-                        color = Color.White,
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
+        Text(
+            text = label,
+            color = if (selected) Color.White else GlassTextMuted,
+            fontSize = 12.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center
+        )
     }
 }
 

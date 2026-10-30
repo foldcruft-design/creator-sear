@@ -116,7 +116,6 @@ fun HomeScreen(
     val currentUser by authRepository.currentUser.collectAsState()
     val currentLanguage by activeSettingsRepo.language.collectAsState()
     val enhanceSettings by activeSettingsRepo.settings.collectAsState()
-    val isPro by activeSettingsRepo.isProSubscriber.collectAsState()
 
     val strings = remember(currentLanguage) { AppStrings(currentLanguage) }
 
@@ -132,7 +131,6 @@ fun HomeScreen(
     var showProfileDialog by remember { mutableStateOf(false) }
     var showProcessingDialog by remember { mutableStateOf(false) }
     var showResultSheet by remember { mutableStateOf(false) }
-    var showProDialog by remember { mutableStateOf(false) }
 
     // Processing state
     var processingStage by remember { mutableStateOf(ProcessingStage.ANALYZING) }
@@ -219,8 +217,6 @@ fun HomeScreen(
                             settings = enhanceSettings,
                             enhancedFile = enhancedFile,
                             savedGalleryPath = savedGalleryPath,
-                            isPro = isPro,
-                            onOpenProModal = { showProDialog = true },
                             onSelectResolutionAndFps = { res, fps ->
                                 activeSettingsRepo.setTargetResolutionAndFps(res, fps)
                             },
@@ -364,15 +360,11 @@ fun HomeScreen(
                             strings = strings,
                             currentLanguage = currentLanguage,
                             settings = enhanceSettings,
-                            isPro = isPro,
                             onLanguageChange = { lang ->
                                 activeSettingsRepo.setLanguage(lang)
                             },
                             onSettingsChange = { updated ->
                                 activeSettingsRepo.updateSettings(updated)
-                            },
-                            onActivatePro = { active ->
-                                activeSettingsRepo.setProSubscriber(active)
                             },
                             onResetDefaults = {
                                 activeSettingsRepo.resetToDefaults()
@@ -409,19 +401,6 @@ fun HomeScreen(
                 onTabSelected = { currentTab = it }
             )
         }
-    }
-
-    if (showProDialog) {
-        com.example.ui.components.ProSubscriptionDialog(
-            isPro = isPro,
-            strings = strings,
-            onActivatePro = { active ->
-                activeSettingsRepo.setProSubscriber(active)
-                showProDialog = false
-                Toast.makeText(context, strings.proActivatedToast, Toast.LENGTH_SHORT).show()
-            },
-            onDismiss = { showProDialog = false }
-        )
     }
 
     if (showAuthDialog) {
@@ -651,8 +630,6 @@ private fun OptimizerZilemContent(
     settings: EnhanceSettings,
     enhancedFile: File?,
     savedGalleryPath: String?,
-    isPro: Boolean = true,
-    onOpenProModal: () -> Unit,
     onSelectResolutionAndFps: (String, Int) -> Unit,
     onVfrToggle: (Boolean) -> Unit,
     onOpenSettingsTab: () -> Unit,
@@ -776,20 +753,19 @@ private fun OptimizerZilemContent(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color(0x0DFFFFFF))
-                                .border(1.dp, Color(0x1AFFFFFF), RoundedCornerShape(16.dp))
+                                .background(Color(0x0EFFFFFF))
+                                .border(1.dp, Color(0x1EFFFFFF), RoundedCornerShape(16.dp))
                                 .padding(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            // Resolution Selector Row
+                            // Resolution Selector Row — Strictly Equal Height & Width
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 QuickQualityChip(
-                                    label = "1080p FHD",
+                                    label = "1080p",
                                     selected = settings.targetResolution == com.example.domain.model.VideoResolutionPresets.RES_1080P,
-                                    badge = null,
                                     onClick = {
                                         onSelectResolutionAndFps(
                                             com.example.domain.model.VideoResolutionPresets.RES_1080P,
@@ -801,10 +777,8 @@ private fun OptimizerZilemContent(
                                 QuickQualityChip(
                                     label = "2K 1440p",
                                     selected = settings.targetResolution == com.example.domain.model.VideoResolutionPresets.RES_1440P,
-                                    badge = "PRO",
                                     onClick = {
-                                        if (!isPro) onOpenProModal()
-                                        else onSelectResolutionAndFps(
+                                        onSelectResolutionAndFps(
                                             com.example.domain.model.VideoResolutionPresets.RES_1440P,
                                             settings.targetFps
                                         )
@@ -814,10 +788,8 @@ private fun OptimizerZilemContent(
                                 QuickQualityChip(
                                     label = "4K UHD",
                                     selected = settings.targetResolution == com.example.domain.model.VideoResolutionPresets.RES_4K,
-                                    badge = "VIP",
                                     onClick = {
-                                        if (!isPro) onOpenProModal()
-                                        else onSelectResolutionAndFps(
+                                        onSelectResolutionAndFps(
                                             com.example.domain.model.VideoResolutionPresets.RES_4K,
                                             settings.targetFps
                                         )
@@ -826,15 +798,14 @@ private fun OptimizerZilemContent(
                                 )
                             }
 
-                            // FPS Selector Row
+                            // FPS Selector Row — Strictly Equal Height & Width
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 QuickQualityChip(
                                     label = "30 FPS",
                                     selected = settings.targetFps == 30,
-                                    badge = null,
                                     onClick = {
                                         onSelectResolutionAndFps(
                                             settings.targetResolution,
@@ -846,7 +817,6 @@ private fun OptimizerZilemContent(
                                 QuickQualityChip(
                                     label = "60 FPS",
                                     selected = settings.targetFps == 60,
-                                    badge = null,
                                     onClick = {
                                         onSelectResolutionAndFps(
                                             settings.targetResolution,
@@ -858,10 +828,8 @@ private fun OptimizerZilemContent(
                                 QuickQualityChip(
                                     label = "120 FPS",
                                     selected = settings.targetFps == 120,
-                                    badge = "120Hz",
                                     onClick = {
-                                        if (!isPro) onOpenProModal()
-                                        else onSelectResolutionAndFps(
+                                        onSelectResolutionAndFps(
                                             settings.targetResolution,
                                             120
                                         )
@@ -1098,7 +1066,8 @@ private fun OptimizerZilemContent(
 
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             GlassButton(
                                                 text = strings.downloadToGalleryBtn,
@@ -1112,7 +1081,7 @@ private fun OptimizerZilemContent(
 
                                             Box(
                                                 modifier = Modifier
-                                                    .size(52.dp)
+                                                    .size(50.dp)
                                                     .clip(RoundedCornerShape(18.dp))
                                                     .background(Color(0x1AFFFFFF))
                                                     .border(1.dp, Color(0x38FFFFFF), RoundedCornerShape(18.dp))
@@ -1675,50 +1644,38 @@ private fun NavTabItem(
 private fun QuickQualityChip(
     label: String,
     selected: Boolean,
-    badge: String? = null,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
-            .background(if (selected) Color(0x38FFFFFF) else Color(0x10FFFFFF))
+            .height(42.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                if (selected) {
+                    Brush.verticalGradient(listOf(Color(0x3DFFFFFF), Color(0x22FFFFFF)))
+                } else {
+                    Brush.verticalGradient(listOf(Color(0x12FFFFFF), Color(0x08FFFFFF)))
+                }
+            )
             .border(
                 1.dp,
-                if (selected) Color(0x75FFFFFF) else Color(0x1EFFFFFF),
-                RoundedCornerShape(10.dp)
+                if (selected) Color(0x78FFFFFF) else Color(0x22FFFFFF),
+                RoundedCornerShape(12.dp)
             )
             .clickable(onClick = onClick)
-            .padding(vertical = 7.dp, horizontal = 4.dp),
+            .padding(horizontal = 8.dp),
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = label,
-                color = if (selected) Color.White else GlassTextMuted,
-                fontSize = 11.sp,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
-            )
-            if (badge != null) {
-                Spacer(modifier = Modifier.width(4.dp))
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(if (selected) Color(0x40FFFFFF) else Color(0x20FFFFFF))
-                        .border(0.5.dp, Color(0x60FFFFFF), RoundedCornerShape(4.dp))
-                        .padding(horizontal = 4.dp, vertical = 1.dp)
-                ) {
-                    Text(
-                        text = badge,
-                        color = Color.White,
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
+        Text(
+            text = label,
+            color = if (selected) Color.White else GlassTextMuted,
+            fontSize = 12.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center
+        )
     }
 }

@@ -180,7 +180,7 @@ fun GlassButton(
         contentPadding = PaddingValues(horizontal = 22.dp, vertical = 15.dp),
         modifier = modifier
             .scale(scale)
-            .heightIn(min = 52.dp)
+            .height(50.dp)
             .background(if (enabled) bgBrush else Brush.linearGradient(listOf(Color(0x0EFFFFFF), Color(0x05FFFFFF))), shape)
     ) {
         Row(
@@ -191,16 +191,18 @@ fun GlassButton(
                     imageVector = icon,
                     contentDescription = null,
                     tint = if (enabled) GlassTextPrimary else GlassTextMuted.copy(alpha = 0.5f),
-                    modifier = Modifier.size(19.dp)
+                    modifier = Modifier.size(18.dp)
                 )
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(8.dp))
             }
             Text(
                 text = text,
                 color = if (enabled) GlassTextPrimary else GlassTextMuted.copy(alpha = 0.5f),
-                fontSize = 15.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                letterSpacing = 0.3.sp
+                letterSpacing = 0.2.sp,
+                maxLines = 1,
+                softWrap = false
             )
         }
     }
@@ -238,7 +240,9 @@ fun GlassBadge(
                 text = text,
                 color = textColor,
                 fontSize = 12.sp,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                softWrap = false
             )
         }
     }
@@ -273,11 +277,14 @@ fun GlassSlider(
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.weight(1f)
                 )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = valueText,
                     color = GlassTextPrimary,
                     fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
             Spacer(modifier = Modifier.height(4.dp))
@@ -311,11 +318,11 @@ fun GlassTextField(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 52.dp)
+            .height(50.dp)
             .clip(shape)
             .background(Color(0x14FFFFFF))
             .border(BorderStroke(1.dp, Color(0x2AFFFFFF)), shape)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = 14.dp),
         contentAlignment = Alignment.CenterStart
     ) {
         Row(
@@ -327,16 +334,18 @@ fun GlassTextField(
                     imageVector = leadingIcon,
                     contentDescription = null,
                     tint = GlassTextSecondary,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(19.dp)
                 )
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(10.dp))
             }
             Box(modifier = Modifier.weight(1f)) {
                 if (value.isEmpty()) {
                     Text(
                         text = placeholder,
                         color = GlassTextMuted,
-                        fontSize = 14.sp
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
                 BasicTextField(
@@ -401,33 +410,4 @@ fun VerifiedBadge(
     }
 }
 
-/**
- * Premium glass badge for PRO features (4K, 120 FPS, Ultra Mode)
- */
-@Composable
-fun ProBadge(
-    text: String = "PRO",
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(6.dp))
-            .background(
-                Brush.horizontalGradient(
-                    listOf(Color(0x30FFFFFF), Color(0x18FFFFFF))
-                )
-            )
-            .border(1.dp, Color(0x50FFFFFF), RoundedCornerShape(6.dp))
-            .padding(horizontal = 6.dp, vertical = 2.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            color = Color.White,
-            fontSize = 9.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 0.5.sp
-        )
-    }
-}
 

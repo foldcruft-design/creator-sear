@@ -70,7 +70,8 @@ class VideoProjectRepository(private val context: Context) {
         enhancedFile: File? = null
     ): Pair<Uri?, String?> = withContext(Dispatchers.IO) {
         try {
-            val fileName = "TokEnhance_${System.currentTimeMillis()}_1080p60.mp4"
+            val fileName = enhancedFile?.name?.takeIf { it.startsWith("TokEnhance_") }
+                ?: "TokEnhance_${System.currentTimeMillis()}.mp4"
             val resolver = context.contentResolver
 
             val inputStream: InputStream? = when {
