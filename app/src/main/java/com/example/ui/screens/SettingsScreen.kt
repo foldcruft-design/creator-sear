@@ -20,13 +20,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.rounded.AutoFixHigh
-import androidx.compose.material.icons.rounded.DeleteSweep
-import androidx.compose.material.icons.rounded.RestartAlt
+import com.example.ui.theme.AppIcons
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -114,7 +108,7 @@ fun SettingsScreen(
                 // 1. Language Selection Glass Card
                 SettingsSectionCard(
                     sectionLabel = strings.sectionLanguage,
-                    icon = Icons.Default.Language
+                    icon = AppIcons.Language
                 ) {
                     Text(
                         text = strings.languageLabel,
@@ -153,7 +147,7 @@ fun SettingsScreen(
                 // 2. Video Algorithm Calibration Glass Card
                 SettingsSectionCard(
                     sectionLabel = strings.sectionEngineParams,
-                    icon = Icons.Default.Tune
+                    icon = AppIcons.Tune
                 ) {
                     // Output Resolution Selector (1080p / 2K / 4K) — Uniform Free Glass Buttons
                     Text(
@@ -312,7 +306,7 @@ fun SettingsScreen(
                 // 3. Stream Modules & Automation Glass Card
                 SettingsSectionCard(
                     sectionLabel = strings.sectionStreamFilters,
-                    icon = Icons.Rounded.AutoFixHigh
+                    icon = AppIcons.AutoFixHigh
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         GlassToggleRow(
@@ -385,7 +379,7 @@ fun SettingsScreen(
                 // 4. Storage & Reset Glass Card
                 SettingsSectionCard(
                     sectionLabel = strings.sectionStorage,
-                    icon = Icons.Default.Storage
+                    icon = AppIcons.Storage
                 ) {
                     Row(
                         modifier = Modifier
@@ -415,7 +409,7 @@ fun SettingsScreen(
 
                     GlassButton(
                         text = strings.clearCacheBtn,
-                        icon = Icons.Rounded.DeleteSweep,
+                        icon = AppIcons.DeleteSweep,
                         isPrimary = false,
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
@@ -429,7 +423,7 @@ fun SettingsScreen(
 
                     GlassButton(
                         text = strings.resetSettingsBtn,
-                        icon = Icons.Rounded.RestartAlt,
+                        icon = AppIcons.RestartAlt,
                         isPrimary = false,
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {

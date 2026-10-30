@@ -15,9 +15,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Logout
+import com.example.ui.theme.AppIcons
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -48,7 +47,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
-import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
@@ -154,7 +152,7 @@ fun ProfileDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Default.AddAPhoto,
+                        imageVector = AppIcons.AddAPhoto,
                         contentDescription = null,
                         tint = GlassTextSecondary,
                         modifier = Modifier.size(13.dp)
@@ -228,7 +226,7 @@ fun ProfileDialog(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                imageVector = Icons.Default.Bolt,
+                                imageVector = AppIcons.Bolt,
                                 contentDescription = null,
                                 tint = Color.White,
                                 modifier = Modifier.size(14.dp)
@@ -323,7 +321,7 @@ fun ProfileDialog(
 
                 GlassButton(
                     text = strings.switchAccountBtn,
-                    icon = Icons.Default.Logout,
+                    icon = AppIcons.Logout,
                     isPrimary = false,
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {

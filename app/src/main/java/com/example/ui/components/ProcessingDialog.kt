@@ -21,8 +21,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
+import com.example.ui.theme.AppIcons
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -113,7 +113,7 @@ fun ProcessingDialog(
                     )
 
                     Icon(
-                        imageVector = Icons.Default.AutoAwesome,
+                        imageVector = AppIcons.AutoAwesome,
                         contentDescription = null,
                         tint = Color.White,
                         modifier = Modifier.size(28.dp)

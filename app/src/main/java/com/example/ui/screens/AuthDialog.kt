@@ -28,14 +28,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.rounded.CheckCircle
+import com.example.ui.theme.AppIcons
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -406,7 +404,7 @@ fun AuthDialog(
                                             fontWeight = FontWeight.Bold
                                         )
                                         Icon(
-                                            imageVector = Icons.Default.AddAPhoto,
+                                            imageVector = AppIcons.AddAPhoto,
                                             contentDescription = null,
                                             tint = GlassTextSecondary,
                                             modifier = Modifier.size(10.dp)
@@ -531,7 +529,7 @@ fun AuthDialog(
                                 modifier = Modifier.size(24.dp)
                             ) {
                                 Icon(
-                                    imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    imageVector = if (passwordVisible) AppIcons.Visibility else AppIcons.VisibilityOff,
                                     contentDescription = "Toggle password",
                                     tint = GlassTextSecondary,
                                     modifier = Modifier.size(18.dp)

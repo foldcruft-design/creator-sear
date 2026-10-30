@@ -20,8 +20,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Share
+import com.example.ui.theme.AppIcons
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -225,7 +225,7 @@ fun ResultExportSheet(
                 // Download Button (Primary)
                 GlassButton(
                     text = strings.downloadToGalleryBtn,
-                    icon = Icons.Rounded.Download,
+                    icon = AppIcons.Download,
                     isPrimary = true,
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onSaveToGallery

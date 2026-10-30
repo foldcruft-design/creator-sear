@@ -35,21 +35,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddAPhoto
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.rounded.AutoFixHigh
 import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.Share
+import com.example.ui.theme.AppIcons
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -502,7 +491,7 @@ private fun TopBar(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.Shield,
+                    imageVector = AppIcons.Shield,
                     contentDescription = null,
                     tint = Color.White,
                     modifier = Modifier.size(18.dp)
@@ -535,7 +524,7 @@ private fun TopBar(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    imageVector = Icons.Default.Language,
+                    imageVector = AppIcons.Language,
                     contentDescription = null,
                     tint = Color.White,
                     modifier = Modifier.size(14.dp)
@@ -722,7 +711,7 @@ private fun OptimizerZilemContent(
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Tune,
+                                    imageVector = AppIcons.Tune,
                                     contentDescription = null,
                                     tint = Color.White,
                                     modifier = Modifier.size(15.dp)
@@ -870,7 +859,7 @@ private fun OptimizerZilemContent(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Movie,
+                                            imageVector = AppIcons.Movie,
                                             contentDescription = null,
                                             tint = Color.White,
                                             modifier = Modifier.size(28.dp)
@@ -901,7 +890,7 @@ private fun OptimizerZilemContent(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Rounded.FileDownload,
+                                            imageVector = AppIcons.FileDownload,
                                             contentDescription = null,
                                             tint = Color.White,
                                             modifier = Modifier.size(28.dp)
@@ -987,7 +976,7 @@ private fun OptimizerZilemContent(
                         // Primary Optimize Button with vector icon (no emojis)
                         GlassButton(
                             text = strings.optimizeButtonText,
-                            icon = Icons.Rounded.AutoFixHigh,
+                            icon = AppIcons.AutoFixHigh,
                             isPrimary = true,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1071,7 +1060,7 @@ private fun OptimizerZilemContent(
                                         ) {
                                             GlassButton(
                                                 text = strings.downloadToGalleryBtn,
-                                                icon = Icons.Rounded.Download,
+                                                icon = AppIcons.Download,
                                                 isPrimary = true,
                                                 modifier = Modifier
                                                     .weight(1f)
@@ -1276,7 +1265,7 @@ private fun FAQAccordion(item: FAQItemText) {
                     modifier = Modifier.weight(1f)
                 )
                 Icon(
-                    imageVector = Icons.Default.ExpandMore,
+                    imageVector = AppIcons.ExpandMore,
                     contentDescription = null,
                     tint = GlassTextSecondary,
                     modifier = Modifier
@@ -1385,7 +1374,7 @@ private fun ProfileScreenContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = Icons.Default.AddAPhoto,
+                imageVector = AppIcons.AddAPhoto,
                 contentDescription = null,
                 tint = GlassTextSecondary,
                 modifier = Modifier.size(13.dp)
@@ -1484,7 +1473,7 @@ private fun ProfileScreenContent(
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = Icons.Default.Bolt,
+                        imageVector = AppIcons.Bolt,
                         contentDescription = null,
                         tint = Color.White,
                         modifier = Modifier.size(20.dp)
@@ -1550,7 +1539,7 @@ private fun BottomNavigationBar(
         ) {
             NavTabItem(
                 title = strings.tabOptimize,
-                icon = Icons.Default.AutoAwesome,
+                icon = AppIcons.AutoAwesome,
                 isSelected = currentTab == 0,
                 testTag = "nav_tab_optimize",
                 onClick = { onTabSelected(0) }
@@ -1558,7 +1547,7 @@ private fun BottomNavigationBar(
 
             NavTabItem(
                 title = strings.tabProjects,
-                icon = Icons.Default.History,
+                icon = AppIcons.History,
                 isSelected = currentTab == 1,
                 testTag = "nav_tab_projects",
                 onClick = { onTabSelected(1) }
@@ -1566,7 +1555,7 @@ private fun BottomNavigationBar(
 
             NavTabItem(
                 title = strings.tabSettings,
-                icon = Icons.Default.Tune,
+                icon = AppIcons.Tune,
                 isSelected = currentTab == 2,
                 testTag = "nav_tab_settings",
                 onClick = { onTabSelected(2) }
