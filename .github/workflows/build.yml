@@ -78,7 +78,7 @@ jobs:
           ./gradlew assembleDebug --stacktrace -Djava.awt.headless=true
           ./gradlew assembleRelease --stacktrace -Djava.awt.headless=true
 
-      - name: Clean CRC Repack, 4-Byte Zipalign & Dual-Sign APKs (v1 JAR + v2/v3 APK Schemes)
+      - name: Clean CRC Repack, 16KB Zipalign & Dual-Sign APKs (v1 JAR + v2/v3 APK Schemes)
         run: |
           BUILD_TOOLS_DIR=$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 | sort -V | tail -n 1)
           echo "Using Build-Tools from: $BUILD_TOOLS_DIR"
@@ -88,6 +88,7 @@ jobs:
             echo "Processing APK: $apk"
 
             # Step 1: Extract and repackage into a clean ZIP to guarantee 100% valid CRC32 tables
+            # CRITICAL: Keep resources.arsc and all .so native libraries uncompressed (ZIP_STORED) for Android 16 (SDK 36)
             python3 - "$apk" << 'EOF'
           import sys, zipfile, os
 
@@ -98,13 +99,18 @@ jobs:
               with zipfile.ZipFile(fixed_path, "w") as zout:
                   for info in zin.infolist():
                       if info.filename.startswith("META-INF/") and (
-                          info.filename.endswith(".SF") or info.filename.endswith(".RSA") or info.filename.endswith(".DSA") or info.filename == "META-INF/MANIFEST.MF"
+                          info.filename.endswith((".SF", ".RSA", ".DSA", ".EC", ".version"))
+                          or info.filename == "META-INF/MANIFEST.MF"
+                          or info.filename.startswith("META-INF/androidx/")
                       ):
                           continue
                       data = zin.read(info.filename)
                       zinfo = zipfile.ZipInfo(filename=info.filename, date_time=(2026, 1, 1, 0, 0, 0))
                       zinfo.external_attr = 0o644 << 16
-                      if info.filename == "resources.arsc" or info.filename.endswith((".mp4", ".webm", ".wav", ".png", ".jpg", ".webp")):
+                      if (
+                          info.filename == "resources.arsc"
+                          or info.filename.endswith((".so", ".mp4", ".webm", ".wav", ".png", ".jpg", ".webp"))
+                      ):
                           zinfo.compress_type = zipfile.ZIP_STORED
                       else:
                           zinfo.compress_type = zipfile.ZIP_DEFLATED
@@ -113,11 +119,15 @@ jobs:
           os.replace(fixed_path, apk_path)
           EOF
 
-            # Step 2: 4-byte page alignment (mandatory before apksigner on Android 11-16 / SDK 30-36)
-            "$BUILD_TOOLS_DIR/zipalign" -p -f 4 "$apk" "${apk}.aligned"
-            mv "${apk}.aligned" "$apk"
+            # Step 2: 16KB page alignment for .so and 4-byte alignment for all uncompressed entries (required for Android 15/16 SDK 36)
+            if "$BUILD_TOOLS_DIR/zipalign" -P 16 -f 4 "$apk" "${apk}.aligned" 2>/dev/null; then
+              mv "${apk}.aligned" "$apk"
+            else
+              "$BUILD_TOOLS_DIR/zipalign" -p -f 4 "$apk" "${apk}.aligned"
+              mv "${apk}.aligned" "$apk"
+            fi
 
-            # Step 3: Sign with apksigner using --min-sdk-version 18 so BOTH v1 (META-INF/ANDROIDD.RSA) AND v2/v3 schemes are written cleanly
+            # Step 3: Sign with apksigner using --min-sdk-version 18 so v1 (META-INF/ANDROIDD.RSA) AND v2/v3 schemes are written cleanly
             "$BUILD_TOOLS_DIR/apksigner" sign \
               --ks debug.keystore \
               --ks-key-alias androiddebugkey \
@@ -130,7 +140,8 @@ jobs:
               --v3-signing-enabled true \
               "$apk"
 
-            # Step 4: Verify v1 + v2 + v3 signatures and CRC table
+            # Step 4: Verify v1 + v2 + v3 signatures, 16KB alignment, and CRC table
+            "$BUILD_TOOLS_DIR/zipalign" -c -v -P 16 4 "$apk" | tail -n 10 || "$BUILD_TOOLS_DIR/zipalign" -c -v 4 "$apk" | tail -n 10
             "$BUILD_TOOLS_DIR/apksigner" verify --min-sdk-version 18 --verbose "$apk"
             echo "========================================"
           done

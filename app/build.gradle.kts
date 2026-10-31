@@ -16,8 +16,8 @@ android {
     applicationId = "com.aistudio.tokenhance.xqvz"
     minSdk = 24
     targetSdk = 36
-    versionCode = 1
-    versionName = "1.0"
+    versionCode = 2
+    versionName = "2.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -68,6 +68,20 @@ android {
   }
   androidResources {
     noCompress += listOf("mp4", "webm", "wav")
+  }
+  packaging {
+    dex {
+      useLegacyPackaging = true
+    }
+    jniLibs {
+      useLegacyPackaging = true
+    }
+    resources {
+      excludes += "/META-INF/{AL2.0,LGPL2.1}"
+      excludes += "/META-INF/*.version"
+      excludes += "/META-INF/androidx/**"
+      excludes += "/META-INF/kotlin-project-structure-metadata.json"
+    }
   }
   buildFeatures {
     compose = true
