@@ -71,47 +71,68 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run Unit Tests
-        run: ./gradlew testDebugUnitTest --stacktrace
+        run: ./gradlew testDebugUnitTest --stacktrace -Djava.awt.headless=true
 
       - name: Build APKs (Debug & Release)
         run: |
-          ./gradlew assembleDebug --stacktrace
-          ./gradlew assembleRelease --stacktrace
+          ./gradlew assembleDebug --stacktrace -Djava.awt.headless=true
+          ./gradlew assembleRelease --stacktrace -Djava.awt.headless=true
 
-      - name: Dual-Sign APKs (v1 JAR Signatures + v2/v3 APK Schemes)
+      - name: Clean CRC Repack, 4-Byte Zipalign & Dual-Sign APKs (v1 JAR + v2/v3 APK Schemes)
         run: |
-          echo "Signing all generated APKs to guarantee compatibility with all Android versions and package installers..."
           BUILD_TOOLS_DIR=$(find "$ANDROID_HOME/build-tools" -maxdepth 1 -mindepth 1 | sort -V | tail -n 1)
           echo "Using Build-Tools from: $BUILD_TOOLS_DIR"
 
           for apk in $(find app/build/outputs/apk -name "*.apk"); do
-            echo "----------------------------------------"
+            echo "========================================"
             echo "Processing APK: $apk"
-            
-            # Step 1: Add v1 JAR signature files (META-INF/*.SF and META-INF/*.RSA)
-            echo "Applying v1 (JAR signing) with jarsigner..."
-            jarsigner -keystore debug.keystore \
-              -storepass android \
-              -keypass android \
-              -sigalg SHA256withRSA \
-              -digestalg SHA-256 \
-              "$apk" androiddebugkey
 
-            # Step 2: Apply v2 and v3 signatures using apksigner
-            echo "Applying v2/v3 APK schemes with apksigner..."
+            # Step 1: Extract and repackage into a clean ZIP to guarantee 100% valid CRC32 tables
+            python3 - "$apk" << 'EOF'
+          import sys, zipfile, os
+
+          apk_path = sys.argv[1]
+          fixed_path = apk_path + ".fixed"
+
+          with zipfile.ZipFile(apk_path, "r") as zin:
+              with zipfile.ZipFile(fixed_path, "w") as zout:
+                  for info in zin.infolist():
+                      if info.filename.startswith("META-INF/") and (
+                          info.filename.endswith(".SF") or info.filename.endswith(".RSA") or info.filename.endswith(".DSA") or info.filename == "META-INF/MANIFEST.MF"
+                      ):
+                          continue
+                      data = zin.read(info.filename)
+                      zinfo = zipfile.ZipInfo(filename=info.filename, date_time=(2026, 1, 1, 0, 0, 0))
+                      zinfo.external_attr = 0o644 << 16
+                      if info.filename == "resources.arsc" or info.filename.endswith((".mp4", ".webm", ".wav", ".png", ".jpg", ".webp")):
+                          zinfo.compress_type = zipfile.ZIP_STORED
+                      else:
+                          zinfo.compress_type = zipfile.ZIP_DEFLATED
+                      zout.writestr(zinfo, data)
+
+          os.replace(fixed_path, apk_path)
+          EOF
+
+            # Step 2: 4-byte page alignment (mandatory before apksigner on Android 11-16 / SDK 30-36)
+            "$BUILD_TOOLS_DIR/zipalign" -p -f 4 "$apk" "${apk}.aligned"
+            mv "${apk}.aligned" "$apk"
+
+            # Step 3: Sign with apksigner using --min-sdk-version 18 so BOTH v1 (META-INF/ANDROIDD.RSA) AND v2/v3 schemes are written cleanly
             "$BUILD_TOOLS_DIR/apksigner" sign \
               --ks debug.keystore \
+              --ks-key-alias androiddebugkey \
               --ks-pass pass:android \
               --key-pass pass:android \
+              --min-sdk-version 18 \
               --v1-signing-enabled true \
+              --v1-signer-name ANDROIDD \
               --v2-signing-enabled true \
               --v3-signing-enabled true \
               "$apk"
 
-            # Step 3: Verify signature integrity
-            echo "Verifying signature:"
-            "$BUILD_TOOLS_DIR/apksigner" verify --verbose "$apk"
-            echo "----------------------------------------"
+            # Step 4: Verify v1 + v2 + v3 signatures and CRC table
+            "$BUILD_TOOLS_DIR/apksigner" verify --min-sdk-version 18 --verbose "$apk"
+            echo "========================================"
           done
 
       - name: Verify APK Integrity
