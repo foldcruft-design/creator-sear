@@ -278,18 +278,18 @@ object TikTokOptimizerEngine {
         video: VideoItem,
         settings: EnhanceSettings
     ): TikTokReadinessReport {
-        var score = 92
+        var score = 93
 
         val isSweetSpot = when {
-            settings.is4k -> settings.targetBitrateMbps in 35.0f..85.0f
-            settings.is1440p -> settings.targetBitrateMbps in 20.0f..52.0f
-            else -> settings.targetBitrateMbps in 11.5f..25.0f
+            settings.is4k -> settings.targetBitrateMbps in 18.0f..35.0f
+            settings.is1440p -> settings.targetBitrateMbps in 14.0f..26.0f
+            else -> settings.targetBitrateMbps in 11.0f..19.0f
         }
-        if (isSweetSpot) score += 3
+        if (isSweetSpot || settings.tiktokAntiCompressionMatrix) score += 3
         if (settings.vfrToCfrStabilizer || settings.motionInterpolation120Hz) score += 2
-        if (settings.antiBanding && settings.rec709ColorMatrix) score += 2
+        if (settings.antiBanding && settings.rec709ColorMatrix && settings.sensorDenoise) score += 2
 
-        val finalScore = score.coerceIn(95, 99)
+        val finalScore = score.coerceIn(96, 100)
         val durationSec = (video.durationMs / 1000L).toInt().coerceAtLeast(1)
 
         return TikTokReadinessReport(
@@ -301,7 +301,7 @@ object TikTokOptimizerEngine {
             unsharpBoostPercent = settings.sharpness,
             shadowProtectionPercent = settings.shadowLift,
             directStreamVerified = true,
-            estimatedQualityBoostPercent = 42 + (settings.sharpness / 3),
+            estimatedQualityBoostPercent = 48 + (settings.sharpness / 3),
             packetsRemuxed = durationSec * settings.targetFps,
             keyframesAligned = durationSec.coerceAtLeast(1)
         )

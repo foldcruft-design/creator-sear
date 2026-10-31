@@ -170,11 +170,10 @@ fun SettingsScreen(
                             label = "1080p",
                             selected = settings.targetResolution == VideoResolutionPresets.RES_1080P,
                             onClick = {
-                                val autoBitrate = when (settings.targetFps) {
-                                    120 -> 24.0f
-                                    60 -> 16.0f
-                                    else -> 12.0f
-                                }
+                                val autoBitrate = VideoResolutionPresets.optimalSweetSpotBitrate(
+                                    VideoResolutionPresets.RES_1080P,
+                                    settings.targetFps
+                                )
                                 onSettingsChange(
                                     settings.copy(
                                         targetResolution = VideoResolutionPresets.RES_1080P,
@@ -188,11 +187,10 @@ fun SettingsScreen(
                             label = "2K 1440p",
                             selected = settings.targetResolution == VideoResolutionPresets.RES_1440P,
                             onClick = {
-                                val autoBitrate = when (settings.targetFps) {
-                                    120 -> 42.0f
-                                    60 -> 32.0f
-                                    else -> 24.0f
-                                }
+                                val autoBitrate = VideoResolutionPresets.optimalSweetSpotBitrate(
+                                    VideoResolutionPresets.RES_1440P,
+                                    settings.targetFps
+                                )
                                 onSettingsChange(
                                     settings.copy(
                                         targetResolution = VideoResolutionPresets.RES_1440P,
@@ -206,11 +204,10 @@ fun SettingsScreen(
                             label = "4K UHD",
                             selected = settings.targetResolution == VideoResolutionPresets.RES_4K,
                             onClick = {
-                                val autoBitrate = when (settings.targetFps) {
-                                    120 -> 75.0f
-                                    60 -> 65.0f
-                                    else -> 48.0f
-                                }
+                                val autoBitrate = VideoResolutionPresets.optimalSweetSpotBitrate(
+                                    VideoResolutionPresets.RES_4K,
+                                    settings.targetFps
+                                )
                                 onSettingsChange(
                                     settings.copy(
                                         targetResolution = VideoResolutionPresets.RES_4K,
@@ -244,19 +241,52 @@ fun SettingsScreen(
                         GlassSegmentedOption(
                             label = "30 FPS",
                             selected = settings.targetFps == 30,
-                            onClick = { onSettingsChange(settings.copy(targetFps = 30)) },
+                            onClick = {
+                                val autoBitrate = VideoResolutionPresets.optimalSweetSpotBitrate(
+                                    settings.targetResolution,
+                                    30
+                                )
+                                onSettingsChange(
+                                    settings.copy(
+                                        targetFps = 30,
+                                        targetBitrateMbps = autoBitrate
+                                    )
+                                )
+                            },
                             modifier = Modifier.weight(1f)
                         )
                         GlassSegmentedOption(
                             label = "60 FPS",
                             selected = settings.targetFps == 60,
-                            onClick = { onSettingsChange(settings.copy(targetFps = 60)) },
+                            onClick = {
+                                val autoBitrate = VideoResolutionPresets.optimalSweetSpotBitrate(
+                                    settings.targetResolution,
+                                    60
+                                )
+                                onSettingsChange(
+                                    settings.copy(
+                                        targetFps = 60,
+                                        targetBitrateMbps = autoBitrate
+                                    )
+                                )
+                            },
                             modifier = Modifier.weight(1f)
                         )
                         GlassSegmentedOption(
                             label = "120 FPS",
                             selected = settings.targetFps == 120,
-                            onClick = { onSettingsChange(settings.copy(targetFps = 120)) },
+                            onClick = {
+                                val autoBitrate = VideoResolutionPresets.optimalSweetSpotBitrate(
+                                    settings.targetResolution,
+                                    120
+                                )
+                                onSettingsChange(
+                                    settings.copy(
+                                        targetFps = 120,
+                                        targetBitrateMbps = autoBitrate
+                                    )
+                                )
+                            },
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -309,6 +339,18 @@ fun SettingsScreen(
                     icon = AppIcons.AutoFixHigh
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        GlassToggleRow(
+                            title = if (strings.isRu) "Защита от пережатия TikTok (ByteVC1 Bypass)" else "TikTok Anti-Reencode Matrix (ByteVC1 Bypass)",
+                            subtitle = if (strings.isRu) {
+                                "32-bit 9-Tap CAS предкомпенсация частот, CABAC High-Profile и удержание битрейта ниже порога пережатия TikTok."
+                            } else {
+                                "32-bit 9-Tap CAS frequency pre-emphasis, High-Profile CABAC, and peak bitrate guard against TikTok re-encoding."
+                            },
+                            checked = settings.tiktokAntiCompressionMatrix,
+                            onCheckedChange = {
+                                onSettingsChange(settings.copy(tiktokAntiCompressionMatrix = it))
+                            }
+                        )
                         GlassToggleRow(
                             title = strings.preFilterTitle,
                             subtitle = strings.preFilterDesc,
