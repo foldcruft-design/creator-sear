@@ -258,6 +258,15 @@ data class EnhanceSettings(
     val targetPlatform: TargetPlatform = TargetPlatform.TIKTOK_BYTEVC1,
     val audioGuardMode: AudioGuardMode = AudioGuardMode.STUDIO_AAC_320,
     val cleanMetadataGuard: Boolean = true,
+    val creatorByteVc1Bypass: Boolean = true,
+    val creatorYoutubeVp9Trigger: Boolean = true,
+    val creatorFirst3SecBoost: Boolean = true,
+    val creatorSubtitleEdgeGuard: Boolean = true,
+    val creatorSkinToneGuard: Boolean = true,
+    val creatorAntiStrobe120Hz: Boolean = true,
+    val creatorOledDimCompensation: Boolean = true,
+    val creatorAudioLimiterGuard: Boolean = true,
+    val creatorTrendSoundMute: Boolean = false,
     val sharpness: Int = 54,
     val microContrast: Int = 26,
     val shadowLift: Int = 11,
@@ -281,6 +290,20 @@ data class EnhanceSettings(
     val is4k: Boolean get() = targetResolution == VideoResolutionPresets.RES_4K
     val is1440p: Boolean get() = targetResolution == VideoResolutionPresets.RES_1440P
     val is120Fps: Boolean get() = targetFps == 120
+
+    val activeCreatorTogglesCount: Int
+        get() = listOf(
+            creatorByteVc1Bypass,
+            creatorYoutubeVp9Trigger,
+            cleanMetadataGuard,
+            creatorFirst3SecBoost,
+            creatorSubtitleEdgeGuard,
+            creatorSkinToneGuard,
+            creatorAntiStrobe120Hz,
+            creatorOledDimCompensation,
+            creatorAudioLimiterGuard,
+            creatorTrendSoundMute
+        ).count { it }
 }
 
 data class VideoItem(

@@ -66,11 +66,6 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-// Signature Telegram Cyan-Azure Gradient Colors
-val TelegramBlueLight = Color(0xFF39B9FF)
-val TelegramBluePrimary = Color(0xFF24A1DE)
-val TelegramBlueDeep = Color(0xFF167AC6)
-
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
@@ -294,13 +289,13 @@ fun GlassSlider(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0x1E24A1DE))
-                        .border(1.dp, Color(0x6639B9FF), RoundedCornerShape(8.dp))
+                        .background(Color(0x14FFFFFF))
+                        .border(1.dp, Color(0x28FFFFFF), RoundedCornerShape(8.dp))
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
                         text = valueText,
-                        color = Color.White,
+                        color = GlassTextPrimary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -315,8 +310,8 @@ fun GlassSlider(
                 valueRange = valueRange,
                 colors = SliderDefaults.colors(
                     thumbColor = Color.White,
-                    activeTrackColor = TelegramBlueLight,
-                    inactiveTrackColor = Color(0x1CFFFFFF)
+                    activeTrackColor = Color(0xB8FFFFFF),
+                    inactiveTrackColor = Color(0x18FFFFFF)
                 )
             )
         }
@@ -381,7 +376,7 @@ fun GlassTextField(
                     visualTransformation = visualTransformation,
                     keyboardOptions = keyboardOptions,
                     keyboardActions = keyboardActions,
-                    cursorBrush = SolidColor(TelegramBlueLight),
+                    cursorBrush = SolidColor(Color.White),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -394,14 +389,13 @@ fun GlassTextField(
 }
 
 /**
- * Telegram-style Scalloped Star-Seal Verified Badge with luminous azure-cyan gradient
- * and crisp rounded vector checkmark.
+ * Telegram-style Scalloped Seal Verified Badge in smoked silver-white aesthetic.
  */
 @Composable
 fun VerifiedBadge(
     modifier: Modifier = Modifier,
-    size: Dp = 18.dp,
-    iconSize: Dp = 11.dp,
+    size: Dp = 16.dp,
+    iconSize: Dp = 10.dp,
     showGlow: Boolean = true
 ) {
     Canvas(modifier = modifier.size(size)) {
@@ -410,20 +404,8 @@ fun VerifiedBadge(
         val cx = w / 2f
         val cy = h / 2f
         val outerR = w * 0.48f
-        val innerR = w * 0.40f
-        val points = 16 // 8 smooth Telegram seal waves
-
-        if (showGlow) {
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(Color(0x5539B9FF), Color.Transparent),
-                    center = Offset(cx, cy),
-                    radius = w * 0.62f
-                ),
-                radius = w * 0.60f,
-                center = Offset(cx, cy)
-            )
-        }
+        val innerR = w * 0.39f
+        val points = 16
 
         val sealPath = Path()
         for (i in 0 until points) {
@@ -442,29 +424,30 @@ fun VerifiedBadge(
         drawPath(
             path = sealPath,
             brush = Brush.linearGradient(
-                colors = listOf(TelegramBlueLight, TelegramBluePrimary, TelegramBlueDeep),
+                colors = listOf(Color(0xFFFFFFFF), Color(0xFFD0D6E2)),
                 start = Offset(0f, 0f),
                 end = Offset(w, h)
             )
         )
 
-        drawPath(
-            path = sealPath,
-            color = Color(0x88FFFFFF),
-            style = Stroke(width = w * 0.045f, join = StrokeJoin.Round)
-        )
+        if (showGlow) {
+            drawPath(
+                path = sealPath,
+                color = Color(0xAAFFFFFF),
+                style = Stroke(width = (w * 0.04f).coerceAtLeast(0.8f), join = StrokeJoin.Round)
+            )
+        }
 
-        // Crisp rounded Telegram checkmark inside
         val checkPath = Path().apply {
-            moveTo(w * 0.30f, h * 0.52f)
-            lineTo(w * 0.44f, h * 0.66f)
+            moveTo(w * 0.29f, h * 0.52f)
+            lineTo(w * 0.44f, h * 0.67f)
             lineTo(w * 0.72f, h * 0.36f)
         }
         drawPath(
             path = checkPath,
-            color = Color.White,
+            color = Color(0xFF080A0F),
             style = Stroke(
-                width = (w * 0.115f).coerceAtLeast(1.8f),
+                width = (w * 0.12f).coerceAtLeast(1.6f),
                 cap = StrokeCap.Round,
                 join = StrokeJoin.Round
             )
@@ -473,14 +456,13 @@ fun VerifiedBadge(
 }
 
 /**
- * Iconic Telegram-style Animated Circular Checkmark with spring physics bounce,
- * glowing cyan-azure gradient fill, and progressive stroke drawing.
+ * Animated Telegram-style Circular Checkmark in Deep Obsidian / Silver-White contour palette.
  */
 @Composable
 fun TelegramCheckmark(
     checked: Boolean,
     modifier: Modifier = Modifier,
-    size: Dp = 24.dp,
+    size: Dp = 22.dp,
     onClick: (() -> Unit)? = null
 ) {
     val progress by animateFloatAsState(
@@ -494,7 +476,7 @@ fun TelegramCheckmark(
 
     val strokeProgress by animateFloatAsState(
         targetValue = if (checked) 1f else 0f,
-        animationSpec = tween(durationMillis = 220),
+        animationSpec = tween(durationMillis = 200),
         label = "tg_check_stroke"
     )
 
@@ -517,35 +499,22 @@ fun TelegramCheckmark(
         val center = Offset(w / 2f, h / 2f)
         val radius = (w / 2f) * 0.88f
 
-        // Unchecked smoked glass ring
         drawCircle(
-            color = Color(0xCC0A0E16),
+            color = Color(0xCC0A0D14),
             radius = radius,
             center = center
         )
         drawCircle(
-            color = Color(0x3DFFFFFF),
+            color = if (checked) Color(0x90FFFFFF) else Color(0x30FFFFFF),
             radius = radius,
             center = center,
-            style = Stroke(width = (w * 0.07f).coerceAtLeast(1.4f))
+            style = Stroke(width = (w * 0.07f).coerceAtLeast(1.2f))
         )
 
         if (progress > 0.01f) {
-            // Subtle outer glow
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(Color(0x4539B9FF), Color.Transparent),
-                    center = center,
-                    radius = radius * 1.25f
-                ),
-                radius = radius * 1.22f * progress.coerceIn(0f, 1f),
-                center = center
-            )
-
-            // Animated Telegram cyan-blue circle fill
             drawCircle(
                 brush = Brush.linearGradient(
-                    colors = listOf(TelegramBlueLight, TelegramBluePrimary, TelegramBlueDeep),
+                    colors = listOf(Color(0xFFF5F7FA), Color(0xFFD2D8E4)),
                     start = Offset(0f, 0f),
                     end = Offset(w, h)
                 ),
@@ -553,15 +522,6 @@ fun TelegramCheckmark(
                 center = center
             )
 
-            // Specular highlight rim
-            drawCircle(
-                color = Color(0x99FFFFFF),
-                radius = radius * progress.coerceIn(0f, 1f),
-                center = center,
-                style = Stroke(width = (w * 0.05f).coerceAtLeast(1f))
-            )
-
-            // Progressive vector checkmark stroke
             val fullCheckPath = Path().apply {
                 moveTo(w * 0.28f, h * 0.52f)
                 lineTo(w * 0.44f, h * 0.68f)
@@ -579,9 +539,9 @@ fun TelegramCheckmark(
 
             drawPath(
                 path = partialPath,
-                color = Color.White,
+                color = Color(0xFF080A0F),
                 style = Stroke(
-                    width = (w * 0.11f).coerceAtLeast(2.0f),
+                    width = (w * 0.115f).coerceAtLeast(1.8f),
                     cap = StrokeCap.Round,
                     join = StrokeJoin.Round
                 )
@@ -591,9 +551,8 @@ fun TelegramCheckmark(
 }
 
 /**
- * Telegram-style Animated Toggle Switch with spring thumb travel,
- * smoked obsidian inactive track, luminous Telegram azure active track,
- * and an animated checkmark drawn inside the thumb.
+ * Telegram-style Animated Toggle Switch with smoked-glass dark track, silver-gray contour,
+ * and an animated checkmark drawn inside the thumb when enabled.
  */
 @Composable
 fun TelegramSwitch(
@@ -611,18 +570,18 @@ fun TelegramSwitch(
     )
 
     val trackColorTop by animateColorAsState(
-        targetValue = if (checked) TelegramBlueLight else Color(0xFF0C1018),
-        animationSpec = tween(200),
+        targetValue = if (checked) Color(0xFF222938) else Color(0xFF0A0D13),
+        animationSpec = tween(180),
         label = "tg_track_top"
     )
     val trackColorBottom by animateColorAsState(
-        targetValue = if (checked) TelegramBlueDeep else Color(0xFF080B10),
-        animationSpec = tween(200),
+        targetValue = if (checked) Color(0xFF161B26) else Color(0xFF07090E),
+        animationSpec = tween(180),
         label = "tg_track_bottom"
     )
     val borderColor by animateColorAsState(
-        targetValue = if (checked) Color(0x9970D0FF) else Color(0x2EFFFFFF),
-        animationSpec = tween(200),
+        targetValue = if (checked) Color(0x88FFFFFF) else Color(0x28FFFFFF),
+        animationSpec = tween(180),
         label = "tg_border"
     )
 
@@ -645,7 +604,7 @@ fun TelegramSwitch(
             .padding(horizontal = 3.dp),
         contentAlignment = Alignment.CenterStart
     ) {
-        val maxOffsetPx = 22f // in dp
+        val maxOffsetPx = 22f
         Box(
             modifier = Modifier
                 .offset {
@@ -656,19 +615,19 @@ fun TelegramSwitch(
                 }
                 .size(thumbSize)
                 .clip(CircleShape)
-                .background(Color.White)
+                .background(if (checked) Color.White else Color(0xFF8C94A6))
                 .border(
                     width = 1.dp,
-                    color = if (checked) Color(0xFFFFFFFF) else Color(0x44FFFFFF),
+                    color = if (checked) Color.White else Color(0x44FFFFFF),
                     shape = CircleShape
                 ),
             contentAlignment = Alignment.Center
         ) {
-            Canvas(modifier = Modifier.size(13.dp)) {
+            Canvas(modifier = Modifier.size(12.dp)) {
                 val w = size.width
                 val h = size.height
-                if (thumbFraction > 0.25f) {
-                    val checkAlpha = ((thumbFraction - 0.25f) / 0.75f).coerceIn(0f, 1f)
+                if (thumbFraction > 0.2f) {
+                    val checkAlpha = ((thumbFraction - 0.2f) / 0.8f).coerceIn(0f, 1f)
                     val path = Path().apply {
                         moveTo(w * 0.18f, h * 0.52f)
                         lineTo(w * 0.42f, h * 0.76f)
@@ -681,19 +640,12 @@ fun TelegramSwitch(
 
                     drawPath(
                         path = partial,
-                        color = TelegramBlueDeep.copy(alpha = checkAlpha),
+                        color = Color(0xFF0A0D14).copy(alpha = checkAlpha),
                         style = Stroke(
-                            width = (w * 0.17f).coerceAtLeast(1.8f),
+                            width = (w * 0.18f).coerceAtLeast(1.8f),
                             cap = StrokeCap.Round,
                             join = StrokeJoin.Round
                         )
-                    )
-                } else {
-                    val dotAlpha = (1f - thumbFraction * 4f).coerceIn(0f, 1f)
-                    drawCircle(
-                        color = Color(0xFF6B7485).copy(alpha = dotAlpha * 0.6f),
-                        radius = w * 0.16f,
-                        center = Offset(w / 2f, h / 2f)
                     )
                 }
             }

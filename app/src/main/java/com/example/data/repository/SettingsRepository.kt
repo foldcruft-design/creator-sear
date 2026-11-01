@@ -47,6 +47,15 @@ class SettingsRepository(context: Context) {
             targetPlatform = platform,
             audioGuardMode = audioMode,
             cleanMetadataGuard = prefs.getBoolean("clean_metadata_guard", true),
+            creatorByteVc1Bypass = prefs.getBoolean("creator_bytevc1_bypass", true),
+            creatorYoutubeVp9Trigger = prefs.getBoolean("creator_youtube_vp9_trigger", true),
+            creatorFirst3SecBoost = prefs.getBoolean("creator_first_3sec_boost", true),
+            creatorSubtitleEdgeGuard = prefs.getBoolean("creator_subtitle_edge_guard", true),
+            creatorSkinToneGuard = prefs.getBoolean("creator_skin_tone_guard", true),
+            creatorAntiStrobe120Hz = prefs.getBoolean("creator_anti_strobe_120hz", true),
+            creatorOledDimCompensation = prefs.getBoolean("creator_oled_dim_compensation", true),
+            creatorAudioLimiterGuard = prefs.getBoolean("creator_audio_limiter_guard", true),
+            creatorTrendSoundMute = prefs.getBoolean("creator_trend_sound_mute", false),
             sharpness = prefs.getInt("sharpness", preset.defaultSharpness),
             microContrast = prefs.getInt("micro_contrast", preset.defaultMicroContrast),
             shadowLift = prefs.getInt("shadow_lift", preset.defaultShadowLift),
@@ -81,6 +90,15 @@ class SettingsRepository(context: Context) {
             .putString("target_platform", newSettings.targetPlatform.name)
             .putString("audio_guard_mode", newSettings.audioGuardMode.name)
             .putBoolean("clean_metadata_guard", newSettings.cleanMetadataGuard)
+            .putBoolean("creator_bytevc1_bypass", newSettings.creatorByteVc1Bypass)
+            .putBoolean("creator_youtube_vp9_trigger", newSettings.creatorYoutubeVp9Trigger)
+            .putBoolean("creator_first_3sec_boost", newSettings.creatorFirst3SecBoost)
+            .putBoolean("creator_subtitle_edge_guard", newSettings.creatorSubtitleEdgeGuard)
+            .putBoolean("creator_skin_tone_guard", newSettings.creatorSkinToneGuard)
+            .putBoolean("creator_anti_strobe_120hz", newSettings.creatorAntiStrobe120Hz)
+            .putBoolean("creator_oled_dim_compensation", newSettings.creatorOledDimCompensation)
+            .putBoolean("creator_audio_limiter_guard", newSettings.creatorAudioLimiterGuard)
+            .putBoolean("creator_trend_sound_mute", newSettings.creatorTrendSoundMute)
             .putInt("sharpness", newSettings.sharpness)
             .putInt("micro_contrast", newSettings.microContrast)
             .putInt("shadow_lift", newSettings.shadowLift)

@@ -53,7 +53,6 @@ import com.example.domain.model.VideoItem
 import com.example.domain.model.VideoResolutionPresets
 import com.example.ui.components.GlassButton
 import com.example.ui.components.GlassSlider
-import com.example.ui.components.TelegramBlueLight
 import com.example.ui.components.TelegramCheckmark
 import com.example.ui.components.TelegramSwitch
 import com.example.ui.components.VerifiedBadge
@@ -78,10 +77,8 @@ fun SettingsScreen(
     val scrollState = rememberScrollState()
     var cacheSizeText by remember { mutableStateOf(TikTokOptimizerEngine.getCacheSizeFormatted(context)) }
 
-    // Category filter: 0 = All, 1 = Creator & Platforms, 2 = 32-Bit Shader, 3 = Stream Modules, 4 = System
+    // Category filter: 0 = All, 1 = Creator 10x, 2 = 32-Bit Shader, 3 = Stream Modules, 4 = System
     var activeFilterTab by remember { mutableIntStateOf(0) }
-    var showCreatorModal by remember { mutableStateOf(false) }
-    var selectedCreatorToolIdx by remember { mutableIntStateOf(0) }
 
     val (resW, resH) = VideoResolutionPresets.dimensionsFor(settings.targetResolution)
     val bpp = remember(settings.targetResolution, settings.targetFps, settings.targetBitrateMbps) {
@@ -108,7 +105,7 @@ fun SettingsScreen(
                     .fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Header + Telegram Verified Studio Status
+                // Header + Verified Studio Badge
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -135,19 +132,19 @@ fun SettingsScreen(
                     }
                 }
 
-                // Live Pipeline Telemetry Card (Obsidian + Telegram Azure Accent)
+                // Live Pipeline Telemetry Card (Dark Obsidian Smoked Glass + Silver/Gray Contour)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(22.dp))
                         .background(
                             Brush.verticalGradient(
-                                colors = listOf(Color(0xEB0D1320), Color(0xF2070A10))
+                                colors = listOf(Color(0xEB0D1017), Color(0xF207090D))
                             )
                         )
                         .border(
                             1.dp,
-                            Brush.verticalGradient(listOf(Color(0x7739B9FF), Color(0x22FFFFFF))),
+                            Brush.verticalGradient(listOf(Color(0x45FFFFFF), Color(0x16FFFFFF))),
                             RoundedCornerShape(22.dp)
                         )
                         .padding(16.dp)
@@ -158,22 +155,30 @@ fun SettingsScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
                                 TelegramCheckmark(checked = true, size = 18.dp)
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = if (strings.isRu) "ТЕЛЕМЕТРИЯ 32-BIT ШЕЙДЕРА И ПОТОКА" else "32-BIT SHADER & STREAM TELEMETRY",
-                                    color = TelegramBlueLight,
+                                    color = GlassTextSecondary,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.6.sp
+                                    letterSpacing = 0.6.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = settings.targetPlatform.shortBadge,
                                 color = Color.White,
                                 fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
 
@@ -202,7 +207,7 @@ fun SettingsScreen(
                     }
                 }
 
-                // Quick Category Filter Bar with Telegram Checkmarks
+                // Quick Category Filter Bar (Dark Gray Fill + Gray/Silver Contour when selected)
                 val filterTabs = if (strings.isRu) {
                     listOf("Все", "Креатор 10x", "Шейдер 32-bit", "Модули", "Система")
                 } else {
@@ -221,53 +226,38 @@ fun SettingsScreen(
                                 .clip(RoundedCornerShape(14.dp))
                                 .background(
                                     if (selected) {
-                                        Brush.horizontalGradient(listOf(Color(0x3824A1DE), Color(0x22167AC6)))
+                                        Brush.verticalGradient(listOf(Color(0xF01C2230), Color(0xF5111520)))
                                     } else {
-                                        Brush.horizontalGradient(listOf(Color(0xCC090C12), Color(0xCC07090E)))
+                                        Brush.verticalGradient(listOf(Color(0xCC090C12), Color(0xCC07090E)))
                                     }
                                 )
                                 .border(
                                     1.dp,
-                                    if (selected) TelegramBlueLight else Color(0x24FFFFFF),
+                                    if (selected) Color(0x88FFFFFF) else Color(0x22FFFFFF),
                                     RoundedCornerShape(14.dp)
                                 )
                                 .clickable { activeFilterTab = index }
                                 .padding(horizontal = 12.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            TelegramCheckmark(checked = selected, size = 15.dp)
-                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = label,
                                 color = if (selected) Color.White else GlassTextSecondary,
                                 fontSize = 12.sp,
-                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
                 }
 
-                // 0. Creator 10 Pro Tools Plaque & Target Platform Profiles
+                // 0. Dedicated Plaque: 10 Creator Functions with Toggle Switches & Target Platform Profiles
                 if (activeFilterTab == 0 || activeFilterTab == 1) {
-                    CreatorSuitePlaqueCard(
+                    CreatorProTogglesCard(
                         isRu = strings.isRu,
                         settings = settings,
-                        selectedVideo = selectedVideo,
-                        onOpenFeatureIndex = { idx ->
-                            selectedCreatorToolIdx = idx
-                            showCreatorModal = true
-                        },
-                        onQuickApplyPlatform = { platform ->
-                            onSettingsChange(
-                                settings.copy(
-                                    targetPlatform = platform,
-                                    targetResolution = platform.recommendedRes,
-                                    targetFps = platform.recommendedFps,
-                                    targetBitrateMbps = platform.recommendedBitrateMbps,
-                                    keyframeIntervalSec = platform.gopSec
-                                )
-                            )
-                        }
+                        onSettingsChange = onSettingsChange
                     )
 
                     // Target Platform Profiles & Audio Guard Section
@@ -295,14 +285,14 @@ fun SettingsScreen(
                                         .clip(RoundedCornerShape(16.dp))
                                         .background(
                                             if (isSelected) {
-                                                Brush.verticalGradient(listOf(Color(0xE6142234), Color(0xF00D1522)))
+                                                Brush.verticalGradient(listOf(Color(0xF01C2230), Color(0xF5111520)))
                                             } else {
                                                 Brush.verticalGradient(listOf(Color(0xCC090C12), Color(0xE606080C)))
                                             }
                                         )
                                         .border(
-                                            width = if (isSelected) 1.2.dp else 1.dp,
-                                            color = if (isSelected) TelegramBlueLight else Color(0x22FFFFFF),
+                                            width = 1.dp,
+                                            color = if (isSelected) Color(0x88FFFFFF) else Color(0x22FFFFFF),
                                             shape = RoundedCornerShape(16.dp)
                                         )
                                         .clickable {
@@ -319,7 +309,7 @@ fun SettingsScreen(
                                         .padding(horizontal = 14.dp, vertical = 12.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    TelegramCheckmark(checked = isSelected, size = 22.dp)
+                                    TelegramCheckmark(checked = isSelected, size = 20.dp)
                                     Spacer(modifier = Modifier.width(12.dp))
                                     Column(modifier = Modifier.weight(1f)) {
                                         Row(
@@ -331,13 +321,19 @@ fun SettingsScreen(
                                                 text = platform.displayTitle(strings.isRu),
                                                 color = Color.White,
                                                 fontSize = 13.sp,
-                                                fontWeight = FontWeight.Bold
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.weight(1f),
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
+                                            Spacer(modifier = Modifier.width(8.dp))
                                             Text(
                                                 text = "${platform.recommendedBitrateMbps} Mbps",
-                                                color = TelegramBlueLight,
+                                                color = GlassTextSecondary,
                                                 fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold
+                                                fontWeight = FontWeight.Bold,
+                                                maxLines = 1,
+                                                softWrap = false
                                             )
                                         }
                                         Spacer(modifier = Modifier.height(2.dp))
@@ -370,15 +366,24 @@ fun SettingsScreen(
                                         .fillMaxWidth()
                                         .clip(RoundedCornerShape(15.dp))
                                         .background(
-                                            if (isSelected) Color(0x2824A1DE) else Color(0xCC090C12)
+                                            if (isSelected) {
+                                                Brush.verticalGradient(listOf(Color(0xF01C2230), Color(0xF5111520)))
+                                            } else {
+                                                Brush.verticalGradient(listOf(Color(0xCC090C12), Color(0xE606080C)))
+                                            }
                                         )
                                         .border(
                                             1.dp,
-                                            if (isSelected) TelegramBlueLight else Color(0x20FFFFFF),
+                                            if (isSelected) Color(0x88FFFFFF) else Color(0x20FFFFFF),
                                             RoundedCornerShape(15.dp)
                                         )
                                         .clickable {
-                                            onSettingsChange(settings.copy(audioGuardMode = mode))
+                                            onSettingsChange(
+                                                settings.copy(
+                                                    audioGuardMode = mode,
+                                                    creatorTrendSoundMute = (mode == AudioGuardMode.MUTE_FOR_TREND_SOUND)
+                                                )
+                                            )
                                         }
                                         .padding(horizontal = 14.dp, vertical = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically
@@ -405,7 +410,7 @@ fun SettingsScreen(
                     }
                 }
 
-                // 1. Studio Algorithm Presets Card with Telegram Checkmarks
+                // 1. Studio Algorithm Presets Card (Dark Gray Smoked Fill + Silver/Gray Contour)
                 if (activeFilterTab == 0 || activeFilterTab == 2) {
                     SettingsSectionCard(
                         sectionLabel = if (strings.isRu) "СТУДИЙНЫЕ ПРЕСЕТЫ АЛГОРИТМА" else "STUDIO ALGORITHM PRESETS",
@@ -432,7 +437,7 @@ fun SettingsScreen(
                                         .background(
                                             if (isSelected) {
                                                 Brush.verticalGradient(
-                                                    listOf(Color(0xE6142234), Color(0xF00C131F))
+                                                    listOf(Color(0xF01C2230), Color(0xF5111520))
                                                 )
                                             } else {
                                                 Brush.verticalGradient(
@@ -441,12 +446,8 @@ fun SettingsScreen(
                                             }
                                         )
                                         .border(
-                                            width = if (isSelected) 1.2.dp else 1.dp,
-                                            brush = if (isSelected) {
-                                                Brush.verticalGradient(listOf(TelegramBlueLight, Color(0x4039B9FF)))
-                                            } else {
-                                                Brush.verticalGradient(listOf(Color(0x22FFFFFF), Color(0x0AFFFFFF)))
-                                            },
+                                            width = 1.dp,
+                                            color = if (isSelected) Color(0x88FFFFFF) else Color(0x22FFFFFF),
                                             shape = RoundedCornerShape(16.dp)
                                         )
                                         .clickable {
@@ -485,7 +486,7 @@ fun SettingsScreen(
                                     ) {
                                         TelegramCheckmark(
                                             checked = isSelected,
-                                            size = 22.dp
+                                            size = 20.dp
                                         )
                                         Spacer(modifier = Modifier.width(12.dp))
                                         Column(modifier = Modifier.weight(1f)) {
@@ -496,7 +497,8 @@ fun SettingsScreen(
                                                     fontSize = 13.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    modifier = Modifier.weight(1f, fill = false)
                                                 )
                                                 Spacer(modifier = Modifier.width(8.dp))
                                                 val badgeLabel = when (preset) {
@@ -510,18 +512,18 @@ fun SettingsScreen(
                                                     modifier = Modifier
                                                         .clip(RoundedCornerShape(6.dp))
                                                         .background(
-                                                            if (isSelected) Color(0x2839B9FF) else Color(0x14FFFFFF)
+                                                            if (isSelected) Color(0x26FFFFFF) else Color(0x14FFFFFF)
                                                         )
                                                         .border(
                                                             1.dp,
-                                                            if (isSelected) TelegramBlueLight else Color(0x24FFFFFF),
+                                                            if (isSelected) Color(0x66FFFFFF) else Color(0x24FFFFFF),
                                                             RoundedCornerShape(6.dp)
                                                         )
                                                         .padding(horizontal = 6.dp, vertical = 2.dp)
                                                 ) {
                                                     Text(
                                                         text = badgeLabel,
-                                                        color = if (isSelected) TelegramBlueLight else Color.White,
+                                                        color = Color.White,
                                                         fontSize = 9.sp,
                                                         fontWeight = FontWeight.Bold,
                                                         maxLines = 1,
@@ -862,7 +864,7 @@ fun SettingsScreen(
                     }
                 }
 
-                // 3. Stream Modules & Automation Glass Card (with Telegram Checkmarks & Telegram Switches)
+                // 3. Stream Modules & Automation Glass Card
                 if (activeFilterTab == 0 || activeFilterTab == 3) {
                     SettingsSectionCard(
                         sectionLabel = strings.sectionStreamFilters,
@@ -878,7 +880,7 @@ fun SettingsScreen(
                                 },
                                 checked = settings.tiktokAntiCompressionMatrix,
                                 onCheckedChange = {
-                                    onSettingsChange(settings.copy(tiktokAntiCompressionMatrix = it))
+                                    onSettingsChange(settings.copy(tiktokAntiCompressionMatrix = it, creatorByteVc1Bypass = it))
                                 }
                             )
                             GlassToggleRow(
@@ -1062,28 +1064,6 @@ fun SettingsScreen(
             }
         }
     }
-
-    if (showCreatorModal) {
-        CreatorSuiteModal(
-            isRu = strings.isRu,
-            initialFeatureIndex = selectedCreatorToolIdx,
-            selectedVideo = selectedVideo,
-            settings = settings,
-            onSettingsChange = onSettingsChange,
-            onApplyPlatform = { platform ->
-                onSettingsChange(
-                    settings.copy(
-                        targetPlatform = platform,
-                        targetResolution = platform.recommendedRes,
-                        targetFps = platform.recommendedFps,
-                        targetBitrateMbps = platform.recommendedBitrateMbps,
-                        keyframeIntervalSec = platform.gopSec
-                    )
-                )
-            },
-            onDismiss = { showCreatorModal = false }
-        )
-    }
 }
 
 @Composable
@@ -1150,14 +1130,14 @@ private fun SettingsSectionCard(
                     modifier = Modifier
                         .size(28.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xE6121722))
-                        .border(1.dp, Color(0x5539B9FF), RoundedCornerShape(8.dp)),
+                        .background(Color(0xE6141924))
+                        .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(8.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = TelegramBlueLight,
+                        tint = Color.White,
                         modifier = Modifier.size(15.dp)
                     )
                 }
@@ -1192,39 +1172,30 @@ private fun GlassSegmentedOption(
             .clip(RoundedCornerShape(12.dp))
             .background(
                 if (selected) {
-                    Brush.verticalGradient(listOf(Color(0xF0152438), Color(0xF50E1826)))
+                    Brush.verticalGradient(listOf(Color(0xF01C2230), Color(0xF5111520)))
                 } else {
                     Brush.verticalGradient(listOf(Color(0x990A0D14), Color(0xB307090E)))
                 }
             )
             .border(
                 1.dp,
-                if (selected) TelegramBlueLight else Color(0x18FFFFFF),
+                if (selected) Color(0x88FFFFFF) else Color(0x18FFFFFF),
                 RoundedCornerShape(12.dp)
             )
             .clickable(onClick = onClick)
             .padding(horizontal = 8.dp),
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            if (selected) {
-                TelegramCheckmark(checked = true, size = 14.dp)
-                Spacer(modifier = Modifier.width(5.dp))
-            }
-            Text(
-                text = label,
-                color = if (selected) Color.White else GlassTextMuted,
-                fontSize = 12.sp,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center
-            )
-        }
+        Text(
+            text = label,
+            color = if (selected) Color.White else GlassTextMuted,
+            fontSize = 12.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center
+        )
     }
 }
 
@@ -1242,7 +1213,7 @@ private fun GlassToggleRow(
             .background(
                 Brush.verticalGradient(
                     if (checked) {
-                        listOf(Color(0xE60D1522), Color(0xEB080C14))
+                        listOf(Color(0xE6141924), Color(0xEB0C0F17))
                     } else {
                         listOf(Color(0xD90A0D14), Color(0xE607090D))
                     }
@@ -1250,7 +1221,7 @@ private fun GlassToggleRow(
             )
             .border(
                 1.dp,
-                if (checked) Color(0x6639B9FF) else Color(0x1AFFFFFF),
+                if (checked) Color(0x66FFFFFF) else Color(0x1AFFFFFF),
                 RoundedCornerShape(16.dp)
             )
             .clickable { onCheckedChange(!checked) }

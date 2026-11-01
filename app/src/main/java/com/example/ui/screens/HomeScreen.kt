@@ -84,8 +84,6 @@ import com.example.domain.model.VideoItem
 import com.example.ui.components.GlassButton
 import com.example.ui.components.ProcessingDialog
 import com.example.ui.components.ResultExportSheet
-import com.example.ui.components.TelegramBlueLight
-import com.example.ui.components.TelegramCheckmark
 import com.example.ui.components.VerifiedBadge
 import com.example.ui.theme.GlassObsidian
 import com.example.ui.theme.GlassTextMuted
@@ -639,8 +637,6 @@ private fun OptimizerZilemContent(
     onShareVideo: () -> Unit
 ) {
     val scrollState = rememberScrollState()
-    var showCreatorSuiteModal by remember { mutableStateOf(false) }
-    var activeCreatorFeatureIdx by remember { mutableIntStateOf(0) }
 
     BoxWithConstraints(
         modifier = Modifier.fillMaxSize()
@@ -1150,16 +1146,11 @@ private fun OptimizerZilemContent(
 
                 Spacer(modifier = Modifier.height(22.dp))
 
-                // Prominent Plaque: 10 New Pro Features for TikTok & YouTube Creators
-                CreatorSuitePlaqueCard(
+                // Separate Dark Smoked-Glass Plaque: 10 Creator Functions with Toggle Switches
+                CreatorProTogglesCard(
                     isRu = strings.isRu,
                     settings = settings,
-                    selectedVideo = selectedVideo,
-                    onOpenFeatureIndex = { idx ->
-                        activeCreatorFeatureIdx = idx
-                        showCreatorSuiteModal = true
-                    },
-                    onQuickApplyPlatform = onApplyPlatform
+                    onSettingsChange = onSettingsChange
                 )
 
                 Spacer(modifier = Modifier.height(34.dp))
@@ -1250,18 +1241,6 @@ private fun OptimizerZilemContent(
                 }
             }
         }
-    }
-
-    if (showCreatorSuiteModal) {
-        CreatorSuiteModal(
-            isRu = strings.isRu,
-            initialFeatureIndex = activeCreatorFeatureIdx,
-            selectedVideo = selectedVideo,
-            settings = settings,
-            onSettingsChange = onSettingsChange,
-            onApplyPlatform = onApplyPlatform,
-            onDismiss = { showCreatorSuiteModal = false }
-        )
     }
 }
 
@@ -1726,38 +1705,29 @@ private fun QuickQualityChip(
             .clip(RoundedCornerShape(12.dp))
             .background(
                 if (selected) {
-                    Brush.verticalGradient(listOf(Color(0xF0152438), Color(0xF50E1826)))
+                    Brush.verticalGradient(listOf(Color(0xF01C2230), Color(0xF5111520)))
                 } else {
                     Brush.verticalGradient(listOf(Color(0x990A0D14), Color(0xB307090E)))
                 }
             )
             .border(
                 1.dp,
-                if (selected) TelegramBlueLight else Color(0x20FFFFFF),
+                if (selected) Color(0x88FFFFFF) else Color(0x20FFFFFF),
                 RoundedCornerShape(12.dp)
             )
             .clickable(onClick = onClick)
             .padding(horizontal = 6.dp),
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            if (selected) {
-                TelegramCheckmark(checked = true, size = 13.dp)
-                Spacer(modifier = Modifier.width(4.dp))
-            }
-            Text(
-                text = label,
-                color = if (selected) Color.White else GlassTextMuted,
-                fontSize = 11.sp,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center
-            )
-        }
+        Text(
+            text = label,
+            color = if (selected) Color.White else GlassTextMuted,
+            fontSize = 12.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center
+        )
     }
 }

@@ -94,7 +94,7 @@ object GpuVideoTranscoder {
 
             val targetFps = settings.targetFps.coerceIn(30, 120)
             val targetBitrateBps = computeEffectiveBitrateBps(settings, targetFps)
-            val gopIntervalSec = settings.keyframeIntervalSec.coerceIn(1, 2)
+            val gopIntervalSec = if (settings.creatorFirst3SecBoost) 1 else settings.keyframeIntervalSec.coerceIn(1, 2)
 
             val encoderConfig = selectBestHardwareEncoder(
                 desiredWidth = desiredWidth,
@@ -235,6 +235,7 @@ object GpuVideoTranscoder {
                             newFormat.setInteger(MediaFormat.KEY_CAPTURE_RATE, targetFps)
                             muxerVideoTrack = muxer.addTrack(newFormat)
                             if (audioTrackIndex != -1 && srcAudioFormat != null &&
+                                !settings.creatorTrendSoundMute &&
                                 settings.audioGuardMode != com.example.domain.model.AudioGuardMode.MUTE_FOR_TREND_SOUND
                             ) {
                                 try {
@@ -308,8 +309,9 @@ object GpuVideoTranscoder {
 
     private fun computeEffectiveBitrateBps(settings: EnhanceSettings, targetFps: Int): Int {
         val requestedMbps = settings.targetBitrateMbps
-        val effectiveMbps = if (settings.tiktokAntiCompressionMatrix) {
-            val sweetSpot = VideoResolutionPresets.optimalSweetSpotBitrate(settings.targetResolution, targetFps)
+        val vp9Boost = if (settings.creatorYoutubeVp9Trigger) 1.06f else 1.0f
+        val effectiveMbps = if (settings.tiktokAntiCompressionMatrix || settings.creatorByteVc1Bypass) {
+            val sweetSpot = VideoResolutionPresets.optimalSweetSpotBitrate(settings.targetResolution, targetFps) * vp9Boost
             val ceilingMbps = when {
                 settings.is4k -> if (targetFps >= 120) 34.0f else if (targetFps >= 60) 28.0f else 22.0f
                 settings.is1440p -> if (targetFps >= 120) 25.0f else if (targetFps >= 60) 21.0f else 17.0f
@@ -317,7 +319,7 @@ object GpuVideoTranscoder {
             }
             requestedMbps.coerceIn(sweetSpot * 0.85f, ceilingMbps)
         } else {
-            requestedMbps.coerceIn(8.0f, 85.0f)
+            (requestedMbps * vp9Boost).coerceIn(8.0f, 85.0f)
         }
         return (effectiveMbps * 1_000_000f).roundToInt().coerceIn(8_000_000, 85_000_000)
     }
@@ -821,7 +823,8 @@ private class TranscodeGpuSurface(
         GLES20.glVertexAttribPointer(aTextureHandle, 2, GLES20.GL_FLOAT, false, 20, triangleVertices)
         GLES20.glEnableVertexAttribArray(aTextureHandle)
 
-        val jitterScale = if (subFrameIndex > 0 && settings.motionInterpolation120Hz) 0.18f else 0.0f
+        val jitterEnabled = settings.motionInterpolation120Hz || settings.creatorAntiStrobe120Hz
+        val jitterScale = if (subFrameIndex > 0 && jitterEnabled) 0.18f else 0.0f
         val jitterX = when (subFrameIndex % 4) {
             1 -> jitterScale / width.toFloat()
             2 -> -jitterScale / width.toFloat()
@@ -835,20 +838,26 @@ private class TranscodeGpuSurface(
             else -> 0f
         }
 
+        val hookSharpnessBoost = if (settings.creatorFirst3SecBoost && frameIndex < 180) 1.08f else 1.0f
+        val oledShadowBoost = if (settings.creatorOledDimCompensation) 0.035f else 0.0f
+        val subtitleHaloActive = settings.haloSuppression || settings.creatorSubtitleEdgeGuard
+        val skinSafeRec709 = settings.rec709ColorMatrix || settings.creatorSkinToneGuard
+        val bypassMatrixActive = settings.tiktokAntiCompressionMatrix || settings.creatorByteVc1Bypass
+
         GLES20.glUniformMatrix4fv(uMVPMatrixHandle, 1, false, mvpMatrix, 0)
         GLES20.glUniformMatrix4fv(uSTMatrixHandle, 1, false, stMatrix, 0)
         GLES20.glUniform2f(uTexelSizeHandle, 1.0f / width.toFloat(), 1.0f / height.toFloat())
         GLES20.glUniform2f(uSubFrameJitterHandle, jitterX, jitterY)
-        GLES20.glUniform1f(uSharpnessHandle, (settings.sharpness / 100f) * 1.26f)
+        GLES20.glUniform1f(uSharpnessHandle, (settings.sharpness / 100f) * 1.26f * hookSharpnessBoost)
         GLES20.glUniform1f(uMicroContrastHandle, (settings.microContrast / 100f) * 1.35f)
-        GLES20.glUniform1f(uShadowLiftHandle, (settings.shadowLift / 100f) * 0.14f)
+        GLES20.glUniform1f(uShadowLiftHandle, (settings.shadowLift / 100f) * 0.14f + oledShadowBoost)
         GLES20.glUniform1f(uHighlightRollOffHandle, (settings.highlightRollOff / 100f).coerceIn(0f, 0.55f))
         GLES20.glUniform1f(uDeblockHandle, (settings.deblockStrength / 100f).coerceIn(0f, 1.0f))
-        GLES20.glUniform1f(uRec709Handle, if (settings.rec709ColorMatrix) 1.0f else 0.0f)
+        GLES20.glUniform1f(uRec709Handle, if (skinSafeRec709) 1.0f else 0.0f)
         GLES20.glUniform1f(uDenoiseHandle, if (settings.sensorDenoise) 1.0f else 0.0f)
         GLES20.glUniform1f(uAntiBandingHandle, if (settings.antiBanding) 1.0f else 0.0f)
-        GLES20.glUniform1f(uHaloSuppressHandle, if (settings.haloSuppression) 1.0f else 0.0f)
-        GLES20.glUniform1f(uAntiReencodeHandle, if (settings.tiktokAntiCompressionMatrix) 1.0f else 0.0f)
+        GLES20.glUniform1f(uHaloSuppressHandle, if (subtitleHaloActive) 1.0f else 0.0f)
+        GLES20.glUniform1f(uAntiReencodeHandle, if (bypassMatrixActive) 1.0f else 0.0f)
         GLES20.glUniform1f(uVibranceHandle, (settings.vibrance / 100f).coerceIn(0f, 0.40f))
         GLES20.glUniform1f(uFramePhaseHandle, (frameIndex % 256) / 256f)
 

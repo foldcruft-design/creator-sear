@@ -684,7 +684,10 @@ object TikTokOptimizerEngine {
                     format.setInteger("tokenhance-target-fps", targetFps)
                     val muxerTrackIdx = muxer.addTrack(format)
                     trackIndexMap[i] = muxerTrackIdx
-                } else if (mime.startsWith("audio/") && settings.audioGuardMode != AudioGuardMode.MUTE_FOR_TREND_SOUND) {
+                } else if (mime.startsWith("audio/") &&
+                    !settings.creatorTrendSoundMute &&
+                    settings.audioGuardMode != AudioGuardMode.MUTE_FOR_TREND_SOUND
+                ) {
                     val muxerTrackIdx = muxer.addTrack(format)
                     trackIndexMap[i] = muxerTrackIdx
                 }
@@ -709,7 +712,7 @@ object TikTokOptimizerEngine {
                     val maxPts = origPtsList.maxOrNull() ?: 0L
                     val totalSpanUs = (maxPts - minPts).coerceAtLeast(16_667L)
 
-                    if (settings.vfrToCfrStabilizer) {
+                    if (settings.vfrToCfrStabilizer || settings.creatorAntiStrobe120Hz) {
                         val sortedUnique = origPtsList.distinct().sorted()
                         val rankMap = HashMap<Long, Int>(sortedUnique.size)
                         for (idx in sortedUnique.indices) {
