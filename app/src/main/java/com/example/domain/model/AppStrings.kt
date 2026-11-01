@@ -25,9 +25,11 @@ class AppStrings(val lang: AppLanguage) {
 
     // Bottom Navigation Tabs
     val tabOptimize = if (isRu) "Оптимизация" else "Optimize"
+    val tabEditor = if (isRu) "Монтаж" else "Editor"
     val tabProjects = if (isRu) "Проекты" else "Projects"
     val tabSettings = if (isRu) "Настройки" else "Settings"
     val tabProfile = if (isRu) "Профиль" else "Profile"
+    val openInEditorBtn = if (isRu) "Открыть в Монтаже" else "Open in Video Editor"
 
     // Home / Optimizer Screen
     val heroTitle = if (isRu) "Оптимизация видео" else "Optimize a video"

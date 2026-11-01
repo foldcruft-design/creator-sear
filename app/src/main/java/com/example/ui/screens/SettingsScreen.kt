@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import com.example.ui.theme.AppIcons
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -47,9 +46,11 @@ import com.example.domain.engine.TikTokOptimizerEngine
 import com.example.domain.model.AppLanguage
 import com.example.domain.model.AppStrings
 import com.example.domain.model.EnhanceSettings
+import com.example.domain.model.PresetType
 import com.example.domain.model.VideoResolutionPresets
 import com.example.ui.components.GlassButton
 import com.example.ui.components.GlassSlider
+import com.example.ui.theme.AppIcons
 import com.example.ui.theme.GlassTextMuted
 import com.example.ui.theme.GlassTextSecondary
 import java.util.Locale
@@ -105,51 +106,145 @@ fun SettingsScreen(
                     )
                 }
 
-                // 1. Language Selection Glass Card
+                // 1. Studio Algorithm Presets Card (Obsidian Smoked Glass)
                 SettingsSectionCard(
-                    sectionLabel = strings.sectionLanguage,
-                    icon = AppIcons.Language
+                    sectionLabel = if (strings.isRu) "СТУДИЙНЫЕ ПРЕСЕТЫ АЛГОРИТМА" else "STUDIO ALGORITHM PRESETS",
+                    icon = AppIcons.AutoAwesome
                 ) {
                     Text(
-                        text = strings.languageLabel,
+                        text = if (strings.isRu) {
+                            "Выберите калибровку 6-ступенчатого 32-bit шейдера под тип исходного видео:"
+                        } else {
+                            "Select a 6-stage 32-bit shader calibration profile for your source footage:"
+                        },
                         color = GlassTextSecondary,
                         fontSize = 12.sp
                     )
                     Spacer(modifier = Modifier.height(10.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color(0x12FFFFFF))
-                            .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(16.dp))
-                            .padding(5.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        GlassSegmentedOption(
-                            label = "Русский (RU)",
-                            selected = currentLanguage == AppLanguage.RU,
-                            onClick = { onLanguageChange(AppLanguage.RU) },
-                            modifier = Modifier
-                                .weight(1f)
-                                .testTag("lang_ru_button")
-                        )
-                        GlassSegmentedOption(
-                            label = "English (EN)",
-                            selected = currentLanguage == AppLanguage.EN,
-                            onClick = { onLanguageChange(AppLanguage.EN) },
-                            modifier = Modifier
-                                .weight(1f)
-                                .testTag("lang_en_button")
-                        )
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        PresetType.values().forEach { preset ->
+                            val isSelected = settings.preset == preset
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(
+                                        if (isSelected) {
+                                            Brush.verticalGradient(
+                                                listOf(Color(0xE61A202E), Color(0xF010141F))
+                                            )
+                                        } else {
+                                            Brush.verticalGradient(
+                                                listOf(Color(0xCC090C12), Color(0xE606080C))
+                                            )
+                                        }
+                                    )
+                                    .border(
+                                        width = if (isSelected) 1.2.dp else 1.dp,
+                                        brush = if (isSelected) {
+                                            Brush.verticalGradient(listOf(Color(0x90FFFFFF), Color(0x30FFFFFF)))
+                                        } else {
+                                            Brush.verticalGradient(listOf(Color(0x22FFFFFF), Color(0x0AFFFFFF)))
+                                        },
+                                        shape = RoundedCornerShape(16.dp)
+                                    )
+                                    .clickable {
+                                        if (preset == PresetType.CUSTOM) {
+                                            onSettingsChange(settings.copy(preset = PresetType.CUSTOM))
+                                        } else {
+                                            val targetFps = if (preset == PresetType.HIGH_MOTION) 120 else settings.targetFps
+                                            val autoBitrate = VideoResolutionPresets.optimalSweetSpotBitrate(
+                                                settings.targetResolution,
+                                                targetFps
+                                            )
+                                            onSettingsChange(
+                                                settings.copy(
+                                                    preset = preset,
+                                                    targetFps = targetFps,
+                                                    sharpness = preset.defaultSharpness,
+                                                    microContrast = preset.defaultMicroContrast,
+                                                    shadowLift = preset.defaultShadowLift,
+                                                    highlightRollOff = preset.defaultHighlightRollOff,
+                                                    deblockStrength = preset.defaultDeblock,
+                                                    vibrance = preset.defaultVibrance,
+                                                    targetBitrateMbps = autoBitrate,
+                                                    motionInterpolation120Hz = true,
+                                                    tiktokAntiCompressionMatrix = true,
+                                                    haloSuppression = true
+                                                )
+                                            )
+                                        }
+                                    }
+                                    .padding(horizontal = 14.dp, vertical = 12.dp)
+                                    .testTag("preset_card_${preset.name.lowercase()}")
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(
+                                                text = preset.displayTitle(strings.isRu),
+                                                color = Color.White,
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            val badgeLabel = when (preset) {
+                                                PresetType.TIKTOK_ULTRA -> "BYPASS"
+                                                PresetType.HIGH_MOTION -> "120 HZ"
+                                                PresetType.NIGHT_AESTHETIC -> "10-BIT"
+                                                PresetType.VLOG_PORTRAIT -> "SKIN"
+                                                PresetType.CUSTOM -> "MANUAL"
+                                            }
+                                            Box(
+                                                modifier = Modifier
+                                                    .clip(RoundedCornerShape(6.dp))
+                                                    .background(
+                                                        if (isSelected) Color(0x2EFFFFFF) else Color(0x14FFFFFF)
+                                                    )
+                                                    .border(
+                                                        1.dp,
+                                                        if (isSelected) Color(0x65FFFFFF) else Color(0x24FFFFFF),
+                                                        RoundedCornerShape(6.dp)
+                                                    )
+                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            ) {
+                                                Text(
+                                                    text = badgeLabel,
+                                                    color = Color.White,
+                                                    fontSize = 9.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    maxLines = 1,
+                                                    softWrap = false
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(3.dp))
+                                        Text(
+                                            text = preset.displayDescription(strings.isRu),
+                                            color = if (isSelected) GlassTextSecondary else GlassTextMuted,
+                                            fontSize = 11.sp,
+                                            lineHeight = 14.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
-                // 2. Video Algorithm Calibration Glass Card
+                // 2. Video Algorithm Calibration Glass Card (6-Stage 32-Bit GPU Pipeline)
                 SettingsSectionCard(
                     sectionLabel = strings.sectionEngineParams,
                     icon = AppIcons.Tune
                 ) {
-                    // Output Resolution Selector (1080p / 2K / 4K) — Uniform Free Glass Buttons
+                    // Output Resolution Selector (1080p / 2K / 4K) — Strictly Equal Smoked Glass Buttons
                     Text(
                         text = strings.targetResolutionLabel,
                         color = GlassTextSecondary,
@@ -161,8 +256,8 @@ fun SettingsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp))
-                            .background(Color(0x10FFFFFF))
-                            .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(16.dp))
+                            .background(Color(0xD907090D))
+                            .border(1.dp, Color(0x24FFFFFF), RoundedCornerShape(16.dp))
                             .padding(5.dp),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
@@ -221,7 +316,7 @@ fun SettingsScreen(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    // Target Frame Rate Selector (30 FPS / 60 FPS / 120 FPS) — Uniform Free Glass Buttons
+                    // Target Frame Rate Selector (30 FPS / 60 FPS / 120 FPS) — Strictly Equal Smoked Glass Buttons
                     Text(
                         text = strings.targetFpsLabel,
                         color = GlassTextSecondary,
@@ -233,8 +328,8 @@ fun SettingsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp))
-                            .background(Color(0x10FFFFFF))
-                            .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(16.dp))
+                            .background(Color(0xD907090D))
+                            .border(1.dp, Color(0x24FFFFFF), RoundedCornerShape(16.dp))
                             .padding(5.dp),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
@@ -293,33 +388,152 @@ fun SettingsScreen(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    // Sharpness Slider
+                    // Closed-GOP Keyframe Interval Selector (1s vs 2s) — Uniform Equal Buttons
+                    Text(
+                        text = if (strings.isRu) "Интервал ключевых I-кадров (Closed-GOP)" else "Closed-GOP Keyframe Cadence",
+                        color = GlassTextSecondary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color(0xD907090D))
+                            .border(1.dp, Color(0x24FFFFFF), RoundedCornerShape(16.dp))
+                            .padding(5.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        GlassSegmentedOption(
+                            label = if (strings.isRu) "GOP 1 сек (Max Crisp)" else "GOP 1 sec (Max Crisp)",
+                            selected = settings.keyframeIntervalSec == 1,
+                            onClick = {
+                                onSettingsChange(settings.copy(keyframeIntervalSec = 1))
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                        GlassSegmentedOption(
+                            label = if (strings.isRu) "GOP 2 сек (Sweet-Spot)" else "GOP 2 sec (Sweet-Spot)",
+                            selected = settings.keyframeIntervalSec == 2,
+                            onClick = {
+                                onSettingsChange(settings.copy(keyframeIntervalSec = 2))
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 1. Sharpness Slider (9-Tap CAS)
                     GlassSlider(
                         value = settings.sharpness.toFloat(),
                         onValueChange = {
-                            onSettingsChange(settings.copy(sharpness = it.roundToInt()))
+                            onSettingsChange(
+                                settings.copy(
+                                    preset = PresetType.CUSTOM,
+                                    sharpness = it.roundToInt()
+                                )
+                            )
                         },
-                        valueRange = 15f..85f,
+                        valueRange = 15f..90f,
                         title = strings.sharpnessLabel,
                         valueText = "${settings.sharpness}%"
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Shadow IRE Lift Slider
+                    // 2. Mid-Frequency Micro-Contrast Slider (Luma Clarity)
+                    GlassSlider(
+                        value = settings.microContrast.toFloat(),
+                        onValueChange = {
+                            onSettingsChange(
+                                settings.copy(
+                                    preset = PresetType.CUSTOM,
+                                    microContrast = it.roundToInt()
+                                )
+                            )
+                        },
+                        valueRange = 0f..60f,
+                        title = if (strings.isRu) "Микроконтраст текстур (Luma Clarity)" else "Texture Micro-Contrast (Luma Clarity)",
+                        valueText = "+${settings.microContrast}%"
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // 3. Adaptive Source Pre-Deblocking Slider
+                    GlassSlider(
+                        value = settings.deblockStrength.toFloat(),
+                        onValueChange = {
+                            onSettingsChange(
+                                settings.copy(
+                                    preset = PresetType.CUSTOM,
+                                    deblockStrength = it.roundToInt()
+                                )
+                            )
+                        },
+                        valueRange = 0f..80f,
+                        title = if (strings.isRu) "Пре-деблокинг квадратов исходника" else "Adaptive Source Macroblock Deblocking",
+                        valueText = "${settings.deblockStrength}%"
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // 4. Shadow IRE Lift Slider (16–235 IRE Toe Protection)
                     GlassSlider(
                         value = settings.shadowLift.toFloat(),
                         onValueChange = {
-                            onSettingsChange(settings.copy(shadowLift = it.roundToInt()))
+                            onSettingsChange(
+                                settings.copy(
+                                    preset = PresetType.CUSTOM,
+                                    shadowLift = it.roundToInt()
+                                )
+                            )
                         },
-                        valueRange = 0f..30f,
+                        valueRange = 0f..35f,
                         title = strings.shadowLiftLabel,
                         valueText = "+${settings.shadowLift}%"
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Bitrate Sweet-Spot Slider (up to 85 Mbps for 4K / 120fps)
+                    // 5. Highlight Soft-Knee Roll-Off Slider
+                    GlassSlider(
+                        value = settings.highlightRollOff.toFloat(),
+                        onValueChange = {
+                            onSettingsChange(
+                                settings.copy(
+                                    preset = PresetType.CUSTOM,
+                                    highlightRollOff = it.roundToInt()
+                                )
+                            )
+                        },
+                        valueRange = 0f..50f,
+                        title = if (strings.isRu) "Защита светов от выгорания (Soft-Knee)" else "Highlight Soft-Knee Roll-Off",
+                        valueText = "${settings.highlightRollOff}%"
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // 6. Skin-Safe Rec.709 Perceptual Vibrance Slider
+                    GlassSlider(
+                        value = settings.vibrance.toFloat(),
+                        onValueChange = {
+                            onSettingsChange(
+                                settings.copy(
+                                    preset = PresetType.CUSTOM,
+                                    vibrance = it.roundToInt()
+                                )
+                            )
+                        },
+                        valueRange = 0f..40f,
+                        title = if (strings.isRu) "Перцептивная сочность (Skin-Safe Rec.709)" else "Skin-Safe Rec.709 Vibrance",
+                        valueText = "+${settings.vibrance}%"
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // 7. Bitrate Sweet-Spot Slider + Auto Calibrate Button
                     val maxBitrate = if (settings.is4k) 85.0f else if (settings.is1440p) 55.0f else 28.0f
                     GlassSlider(
                         value = settings.targetBitrateMbps.coerceIn(8.0f, maxBitrate),
@@ -330,6 +544,26 @@ fun SettingsScreen(
                         valueRange = 8.0f..maxBitrate,
                         title = strings.bitrateSweetSpotLabel,
                         valueText = String.format(Locale.US, "%.1f Mbps", settings.targetBitrateMbps)
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    val optimalSweetSpot = VideoResolutionPresets.optimalSweetSpotBitrate(
+                        settings.targetResolution,
+                        settings.targetFps
+                    )
+                    GlassButton(
+                        text = if (strings.isRu) {
+                            "Выставить эталон TikTok Bypass (${String.format(Locale.US, "%.1f", optimalSweetSpot)} Mbps)"
+                        } else {
+                            "Apply TikTok Bypass Sweet-Spot (${String.format(Locale.US, "%.1f", optimalSweetSpot)} Mbps)"
+                        },
+                        icon = AppIcons.Bolt,
+                        isPrimary = false,
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            onSettingsChange(settings.copy(targetBitrateMbps = optimalSweetSpot))
+                        }
                     )
                 }
 
@@ -342,9 +576,9 @@ fun SettingsScreen(
                         GlassToggleRow(
                             title = if (strings.isRu) "Защита от пережатия TikTok (ByteVC1 Bypass)" else "TikTok Anti-Reencode Matrix (ByteVC1 Bypass)",
                             subtitle = if (strings.isRu) {
-                                "32-bit 9-Tap CAS предкомпенсация частот, CABAC High-Profile и удержание битрейта ниже порога пережатия TikTok."
+                                "32-bit 9-Tap CAS предкомпенсация DCT-частот, CABAC High-Profile и удержание битрейта ниже порога пережатия TikTok."
                             } else {
-                                "32-bit 9-Tap CAS frequency pre-emphasis, High-Profile CABAC, and peak bitrate guard against TikTok re-encoding."
+                                "32-bit 9-Tap CAS DCT frequency pre-emphasis, High-Profile CABAC, and peak bitrate guard against TikTok re-encoding."
                             },
                             checked = settings.tiktokAntiCompressionMatrix,
                             onCheckedChange = {
@@ -418,7 +652,46 @@ fun SettingsScreen(
                     }
                 }
 
-                // 4. Storage & Reset Glass Card
+                // 4. Language Selection Glass Card
+                SettingsSectionCard(
+                    sectionLabel = strings.sectionLanguage,
+                    icon = AppIcons.Language
+                ) {
+                    Text(
+                        text = strings.languageLabel,
+                        color = GlassTextSecondary,
+                        fontSize = 12.sp
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color(0xD907090D))
+                            .border(1.dp, Color(0x24FFFFFF), RoundedCornerShape(16.dp))
+                            .padding(5.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        GlassSegmentedOption(
+                            label = "Русский (RU)",
+                            selected = currentLanguage == AppLanguage.RU,
+                            onClick = { onLanguageChange(AppLanguage.RU) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("lang_ru_button")
+                        )
+                        GlassSegmentedOption(
+                            label = "English (EN)",
+                            selected = currentLanguage == AppLanguage.EN,
+                            onClick = { onLanguageChange(AppLanguage.EN) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("lang_en_button")
+                        )
+                    }
+                }
+
+                // 5. Storage & Reset Glass Card
                 SettingsSectionCard(
                     sectionLabel = strings.sectionStorage,
                     icon = AppIcons.Storage
@@ -427,8 +700,8 @@ fun SettingsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(14.dp))
-                            .background(Color(0x10FFFFFF))
-                            .border(1.dp, Color(0x1EFFFFFF), RoundedCornerShape(14.dp))
+                            .background(Color(0xD907090D))
+                            .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(14.dp))
                             .padding(horizontal = 14.dp, vertical = 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
@@ -493,12 +766,12 @@ private fun SettingsSectionCard(
             .clip(RoundedCornerShape(24.dp))
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(Color(0x1AFFFFFF), Color(0x0AFFFFFF))
+                    colors = listOf(Color(0xD90B0E15), Color(0xEB06080C))
                 )
             )
             .border(
                 1.dp,
-                Brush.verticalGradient(listOf(Color(0x38FFFFFF), Color(0x0EFFFFFF))),
+                Brush.verticalGradient(listOf(Color(0x36FFFFFF), Color(0x0EFFFFFF))),
                 RoundedCornerShape(24.dp)
             )
             .padding(18.dp)
@@ -511,8 +784,8 @@ private fun SettingsSectionCard(
                     modifier = Modifier
                         .size(28.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0x20FFFFFF))
-                        .border(1.dp, Color(0x35FFFFFF), RoundedCornerShape(8.dp)),
+                        .background(Color(0xE6121722))
+                        .border(1.dp, Color(0x38FFFFFF), RoundedCornerShape(8.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -553,14 +826,14 @@ private fun GlassSegmentedOption(
             .clip(RoundedCornerShape(12.dp))
             .background(
                 if (selected) {
-                    Brush.verticalGradient(listOf(Color(0x3DFFFFFF), Color(0x22FFFFFF)))
+                    Brush.verticalGradient(listOf(Color(0xF01C2230), Color(0xF5111520)))
                 } else {
-                    Brush.verticalGradient(listOf(Color(0x08FFFFFF), Color(0x04FFFFFF)))
+                    Brush.verticalGradient(listOf(Color(0x990A0D14), Color(0xB307090E)))
                 }
             )
             .border(
                 1.dp,
-                if (selected) Color(0x75FFFFFF) else Color(0x16FFFFFF),
+                if (selected) Color(0x88FFFFFF) else Color(0x18FFFFFF),
                 RoundedCornerShape(12.dp)
             )
             .clickable(onClick = onClick)
@@ -591,8 +864,16 @@ private fun GlassToggleRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Color(0x0EFFFFFF))
-            .border(1.dp, Color(0x1CFFFFFF), RoundedCornerShape(16.dp))
+            .background(
+                Brush.verticalGradient(
+                    listOf(Color(0xD90A0D14), Color(0xE607090D))
+                )
+            )
+            .border(
+                1.dp,
+                if (checked) Color(0x36FFFFFF) else Color(0x1AFFFFFF),
+                RoundedCornerShape(16.dp)
+            )
             .clickable { onCheckedChange(!checked) }
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -618,9 +899,11 @@ private fun GlassToggleRow(
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
-                checkedTrackColor = Color(0x80FFFFFF),
+                checkedTrackColor = Color(0xFF232B3D),
+                checkedBorderColor = Color(0x80FFFFFF),
                 uncheckedThumbColor = GlassTextMuted,
-                uncheckedTrackColor = Color(0x18FFFFFF)
+                uncheckedTrackColor = Color(0xFF0A0D13),
+                uncheckedBorderColor = Color(0x28FFFFFF)
             )
         )
     }

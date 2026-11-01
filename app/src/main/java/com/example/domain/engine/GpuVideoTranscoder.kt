@@ -29,13 +29,14 @@ import kotlin.math.roundToInt
 /**
  * Filigree Hardware-Accelerated MediaCodec + 32-Bit High-Precision OpenGL ES 2.0 Video Transcoder.
  *
- * Implements a 5-Stage Anti-Compression Pipeline specifically engineered to survive
+ * Implements a 6-Stage Anti-Compression Pipeline specifically engineered to survive
  * TikTok / Reels / Shorts ingestion transcoders with virtually zero visible degradation:
  * 1. 32-bit IEEE-754 (`highp float`) UV & Color math for subpixel accuracy at 4K (2160×3840) and 2K (1440×2560).
- * 2. YCbCr Bilateral Chroma Denoising — strips invisible sensor chroma noise so 100% of macroblock bits go to luma detail.
- * 3. 9-Tap Contrast-Adaptive Sharpening (CAS) + Pre-Compression DCT Frequency Pre-Emphasis (0.35–0.75 Nyquist band).
- * 4. Broadcast Legal Range (16–235 IRE) Cubic Shadow Toe & Highlight Knee Protection + Studio Rec.709 Vibrance.
- * 5. Sub-LSB Triangular PDF (TPDF) Spatio-Temporal Dithering + High-Profile CABAC Closed-GOP Encoding.
+ * 2. YCbCr Bilateral Chroma Denoising + Adaptive Source Macroblock Pre-Deblocking (`uDeblock`).
+ * 3. 9-Tap Contrast-Adaptive Sharpening (CAS) + Pre-Compression DCT Frequency Pre-Emphasis (`uSharpness`, `uAntiReencode`).
+ * 4. Mid-Frequency Local Luma Clarity / Micro-Contrast (`uMicroContrast`) for 3D texture depth without edge halos.
+ * 5. Broadcast Legal Range (16–235 IRE) Cubic Shadow Toe & Soft-Knee Highlight Roll-Off (`uShadowLift`, `uHighlightRollOff`) + Studio Rec.709 Skin-Safe Vibrance.
+ * 6. Sub-LSB Triangular PDF (TPDF) Spatio-Temporal Dithering + High-Profile CABAC Closed-GOP Encoding.
  */
 object GpuVideoTranscoder {
 
@@ -93,12 +94,14 @@ object GpuVideoTranscoder {
 
             val targetFps = settings.targetFps.coerceIn(30, 120)
             val targetBitrateBps = computeEffectiveBitrateBps(settings, targetFps)
+            val gopIntervalSec = settings.keyframeIntervalSec.coerceIn(1, 2)
 
             val encoderConfig = selectBestHardwareEncoder(
                 desiredWidth = desiredWidth,
                 desiredHeight = desiredHeight,
                 targetFps = targetFps,
-                targetBitrateBps = targetBitrateBps
+                targetBitrateBps = targetBitrateBps,
+                gopIntervalSec = gopIntervalSec
             ) ?: return false
 
             encoder = encoderConfig.codec
@@ -173,7 +176,7 @@ object GpuVideoTranscoder {
                     }
                 }
 
-                // 2. Drain decoded frames from Decoder -> 5-Stage Filigree GPU Shader -> Encoder Surface
+                // 2. Drain decoded frames from Decoder -> 6-Stage Filigree GPU Shader -> Encoder Surface
                 if (!decoderDone) {
                     val decStatus = decoder.dequeueOutputBuffer(decBufferInfo, 4_000L)
                     if (decStatus >= 0) {
@@ -301,17 +304,10 @@ object GpuVideoTranscoder {
         }
     }
 
-    /**
-     * Computes the optimal bitrate envelope.
-     * When [EnhanceSettings.tiktokAntiCompressionMatrix] is active, clamps extreme VBR spikes
-     * that would otherwise trigger TikTok's harsh server-side down-quantizer, while keeping
-     * bits-per-pixel at the top of TikTok's High-Profile CABAC passthrough window.
-     */
     private fun computeEffectiveBitrateBps(settings: EnhanceSettings, targetFps: Int): Int {
         val requestedMbps = settings.targetBitrateMbps
         val effectiveMbps = if (settings.tiktokAntiCompressionMatrix) {
             val sweetSpot = VideoResolutionPresets.optimalSweetSpotBitrate(settings.targetResolution, targetFps)
-            // Blend user preference with the anti-reencode ceiling so 4K/2K/1080p never triggers harsh server re-compression
             val ceilingMbps = when {
                 settings.is4k -> if (targetFps >= 120) 34.0f else if (targetFps >= 60) 28.0f else 22.0f
                 settings.is1440p -> if (targetFps >= 120) 25.0f else if (targetFps >= 60) 21.0f else 17.0f
@@ -334,9 +330,9 @@ object GpuVideoTranscoder {
         desiredWidth: Int,
         desiredHeight: Int,
         targetFps: Int,
-        targetBitrateBps: Int
+        targetBitrateBps: Int,
+        gopIntervalSec: Int
     ): EncoderSelection? {
-        // Prefer AVC High Profile for 1080p (universal TikTok Direct Passthrough) and HEVC Main / AVC High for 2K & 4K 120fps
         val candidateMimes = if (desiredWidth >= 1440 || desiredHeight >= 2560 || targetFps >= 120) {
             listOf(MediaFormat.MIMETYPE_VIDEO_HEVC, MediaFormat.MIMETYPE_VIDEO_AVC)
         } else {
@@ -350,8 +346,6 @@ object GpuVideoTranscoder {
                 val h = (((desiredHeight * scale).roundToInt() / 16) * 16).coerceAtLeast(720)
 
                 for (headerFps in listOf(targetFps, 60, 30).distinct()) {
-                    // Tier 1: High-Profile / Main-Profile + CABAC + B-Frames + VBR/CBR + Operating Rate
-                    // Tier 2: Standard Surface Config (maximum compatibility fallback)
                     for (useAdvancedProfile in listOf(true, false)) {
                         var codec: MediaCodec? = null
                         try {
@@ -363,8 +357,7 @@ object GpuVideoTranscoder {
                                 setInteger(MediaFormat.KEY_BIT_RATE, targetBitrateBps)
                                 setInteger(MediaFormat.KEY_FRAME_RATE, headerFps)
                                 setInteger(MediaFormat.KEY_CAPTURE_RATE, targetFps)
-                                setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)
-                                // Studio Rec.709 color standard metadata
+                                setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, gopIntervalSec)
                                 setInteger(MediaFormat.KEY_COLOR_STANDARD, MediaFormat.COLOR_STANDARD_BT709)
                                 setInteger(MediaFormat.KEY_COLOR_TRANSFER, MediaFormat.COLOR_TRANSFER_SDR_VIDEO)
                                 setInteger(MediaFormat.KEY_COLOR_RANGE, MediaFormat.COLOR_RANGE_LIMITED)
@@ -424,12 +417,13 @@ object GpuVideoTranscoder {
 
 /**
  * Manages EGL 1.4 Context, Encoder Input Surface, Decoder SurfaceTexture,
- * and 32-Bit High-Precision (`highp float`) 5-Stage Filigree Shader Pipeline:
- * - YCbCr Chroma Bilateral Denoising
- * - 9-Tap Contrast-Adaptive Sharpening (CAS) + Pre-Compression DCT Pre-Emphasis
- * - Broadcast Legal Range (16–235 IRE) Shadow Toe & Highlight Knee Protection
- * - Perceptual Vibrance & Studio Rec.709 S-Curve Calibration
- * - Sub-LSB Triangular PDF (TPDF) Spatio-Temporal Anti-Banding Dithering
+ * and 32-Bit High-Precision (`highp float`) 6-Stage Filigree Shader Pipeline:
+ * - Stage 1: YCbCr Chroma Bilateral Denoising + Adaptive Source Macroblock Pre-Deblocking
+ * - Stage 2: 9-Tap Contrast-Adaptive Sharpening (CAS) + Pre-Compression DCT Pre-Emphasis
+ * - Stage 3: Mid-Frequency Local Luma Clarity / Micro-Contrast (3D Texture Pop)
+ * - Stage 4: Broadcast Legal Range (16–235 IRE) Shadow Toe & Soft-Knee Highlight Roll-Off
+ * - Stage 5: Perceptual Skin-Safe Vibrance & Studio Rec.709 S-Curve Calibration
+ * - Stage 6: Sub-LSB Triangular PDF (TPDF) Spatio-Temporal Anti-Banding Dithering
  */
 private class TranscodeGpuSurface(
     encoderSurface: Surface,
@@ -455,7 +449,10 @@ private class TranscodeGpuSurface(
     private var uSTMatrixHandle = 0
     private var uTexelSizeHandle = 0
     private var uSharpnessHandle = 0
+    private var uMicroContrastHandle = 0
     private var uShadowLiftHandle = 0
+    private var uHighlightRollOffHandle = 0
+    private var uDeblockHandle = 0
     private var uRec709Handle = 0
     private var uDenoiseHandle = 0
     private var uAntiBandingHandle = 0
@@ -477,7 +474,6 @@ private class TranscodeGpuSurface(
         .apply {
             put(
                 floatArrayOf(
-                    // X, Y, Z, U, V
                     -1.0f, -1.0f, 0f, 0f, 0f,
                      1.0f, -1.0f, 0f, 1f, 0f,
                     -1.0f,  1.0f, 0f, 0f, 1f,
@@ -504,7 +500,7 @@ private class TranscodeGpuSurface(
             EGL14.EGL_BLUE_SIZE, 8,
             EGL14.EGL_ALPHA_SIZE, 8,
             EGL14.EGL_RENDERABLE_TYPE, EGL14.EGL_OPENGL_ES2_BIT,
-            0x3142, 1, // EGL_RECORDABLE_ANDROID
+            0x3142, 1,
             EGL14.EGL_NONE
         )
         val configs = arrayOfNulls<EGLConfig>(1)
@@ -559,7 +555,7 @@ private class TranscodeGpuSurface(
             }
         """.trimIndent()
 
-        // 5-Stage Filigree 32-Bit High-Precision Anti-Compression Fragment Shader
+        // 6-Stage Filigree 32-Bit High-Precision Anti-Compression Fragment Shader
         val fragmentShader = """
             #extension GL_OES_EGL_image_external : require
             #ifdef GL_FRAGMENT_PRECISION_HIGH
@@ -571,7 +567,10 @@ private class TranscodeGpuSurface(
             uniform samplerExternalOES sTexture;
             uniform vec2 uTexelSize;
             uniform float uSharpness;
+            uniform float uMicroContrast;
             uniform float uShadowLift;
+            uniform float uHighlightRollOff;
+            uniform float uDeblock;
             uniform float uRec709;
             uniform float uDenoise;
             uniform float uAntiBanding;
@@ -616,17 +615,21 @@ private class TranscodeGpuSurface(
                 vec3 crossAvg = 0.25 * (n + s + e + w);
                 vec3 diagAvg  = 0.25 * (ne + sw + nw + se);
                 vec3 ringAvg  = 0.60 * crossAvg + 0.40 * diagAvg;
+                float ringLuma = getLuma(ringAvg);
 
-                // Stage 1: Luma-Preserving Bilateral Chroma Sensor Denoise
-                // Cleans high-frequency chroma noise so H.264/HEVC spends its bit budget on crisp luma edges
+                // Stage 1: Bilateral Chroma Denoise + Adaptive Source Macroblock Pre-Deblocking
                 vec3 baseColor = c;
+                float edgeDiff = abs(lumaC - ringLuma);
                 if (uDenoise > 0.5) {
-                    float edgeDiff = abs(lumaC - getLuma(ringAvg));
-                    float chromaWeight = clamp(1.0 - edgeDiff * 14.0, 0.0, 1.0) * 0.62;
+                    float chromaWeight = clamp(1.0 - edgeDiff * 14.0, 0.0, 1.0) * 0.64;
                     vec3 chromaSmoothed = mix(c, ringAvg, chromaWeight);
-                    // Restore 100% of original luma while keeping smoothed chroma
                     float smoothedLuma = getLuma(chromaSmoothed);
                     baseColor = clamp(chromaSmoothed + (lumaC - smoothedLuma), 0.0, 1.0);
+                }
+                if (uDeblock > 0.01) {
+                    // Smooths low-amplitude compression block steps (< 0.038 luma delta) without blurring real edges
+                    float blockMask = clamp(1.0 - edgeDiff * 26.0, 0.0, 1.0);
+                    baseColor = mix(baseColor, ringAvg, blockMask * uDeblock * 0.42);
                 }
 
                 // Stage 2: 9-Tap Contrast-Adaptive Sharpening (CAS) + TikTok Pre-Compression Frequency Pre-Emphasis
@@ -635,16 +638,13 @@ private class TranscodeGpuSurface(
                 minL = min(minL, min(min(lumaNE, lumaSW), min(lumaNW, lumaSE)));
                 maxL = max(maxL, max(max(lumaNE, lumaSW), max(lumaNW, lumaSE)));
 
-                // CAS contrast envelope: boosts subtle micro-details strongly while tapering on hard edges
                 float contrastSpan = maxL - minL;
                 float casConfidence = clamp(1.0 - contrastSpan * 2.15, 0.22, 1.0);
 
-                // Multi-band detail extraction (fine cardinal band + ultra-fine diagonal band)
                 vec3 fineDetail = baseColor - crossAvg;
                 vec3 microDetail = baseColor - ringAvg;
                 vec3 combinedDetail = mix(fineDetail, microDetail, 0.58);
 
-                // Pre-compression high-frequency pre-emphasis to counteract TikTok ByteVC1 quantizer roll-off
                 float preEmphasisGain = (uAntiReencode > 0.5) ? 1.28 : 1.0;
                 float effectiveSharpness = uSharpness * casConfidence * preEmphasisGain;
 
@@ -652,39 +652,45 @@ private class TranscodeGpuSurface(
                 vec3 detailDelta = clamp(combinedDetail * effectiveSharpness, -clampLimit, clampLimit);
                 vec3 color = baseColor + detailDelta;
 
-                // Soft neighborhood overshoot limiter to guarantee zero white/black edge ringing
                 if (uHaloSuppress > 0.5) {
                     vec3 minRGB = min(c, min(min(n, s), min(e, w))) - vec3(0.032);
                     vec3 maxRGB = max(c, max(max(n, s), max(e, w))) + vec3(0.032);
                     color = clamp(color, minRGB, maxRGB);
                 }
 
-                // Stage 3: Broadcast Legal Range (16-235 IRE) Deep Shadow Toe & Highlight Knee Protection
+                // Stage 3: Mid-Frequency Local Luma Clarity / Micro-Contrast (3D Depth)
+                if (uMicroContrast > 0.01) {
+                    float lNow = getLuma(color);
+                    float midtoneBell = 4.0 * lNow * (1.0 - lNow);
+                    float localClarity = clamp((lNow - ringLuma) * uMicroContrast * midtoneBell, -0.055, 0.055);
+                    color += vec3(localClarity);
+                }
+
+                // Stage 4: Broadcast Legal Range (16-235 IRE) Deep Shadow Toe & Soft-Knee Highlight Roll-Off
                 float lumaNow = getLuma(color);
                 float shadowToe = clamp(1.0 - lumaNow * 3.6, 0.0, 1.0);
                 color += shadowToe * shadowToe * uShadowLift;
 
-                // Smooth highlight shoulder roll-off above 0.94 to prevent clipping in TikTok YUV conversion
-                vec3 overHighlight = max(color - vec3(0.94), vec3(0.0));
-                color -= overHighlight * 0.35;
+                // Soft-knee highlight compression above 0.88 IRE to prevent neon/sky clipping in TikTok YUV420
+                vec3 overHighlight = max(color - vec3(0.88), vec3(0.0));
+                color -= overHighlight * (0.25 + uHighlightRollOff);
 
-                // Stage 4: Studio Rec.709 Micro-Contrast S-Curve & Perceptual Skin-Safe Vibrance
+                // Stage 5: Studio Rec.709 Micro-Contrast S-Curve & Perceptual Skin-Safe Vibrance
                 if (uRec709 > 0.5) {
-                    float l = getLuma(color);
-                    // Subtle S-curve contrast around mid-gray (0.48)
-                    vec3 sCurve = (color - vec3(0.48)) * 1.038 + vec3(0.48);
+                    vec3 sCurve = (color - vec3(0.48)) * 1.040 + vec3(0.48);
                     color = mix(color, sCurve, 0.65);
 
                     float maxCh = max(color.r, max(color.g, color.b));
                     float minCh = min(color.r, min(color.g, color.b));
                     float sat = maxCh - minCh;
-                    // Vibrance boosts muted colors more than already saturated tones
-                    float vibBoost = 1.0 + uVibrance * (1.0 - sat * 0.75);
+                    // Protect warm skin hues (where R > G > B) from over-saturation
+                    float skinGuard = (color.r > color.g && color.g > color.b) ? 0.68 : 1.0;
+                    float vibBoost = 1.0 + (uVibrance * skinGuard) * (1.0 - sat * 0.75);
                     vec3 gray = vec3(getLuma(color));
                     color = mix(gray, color, vibBoost);
                 }
 
-                // Stage 5: Sub-LSB Triangular PDF (TPDF) Spatio-Temporal Anti-Banding Dither
+                // Stage 6: Sub-LSB Triangular PDF (TPDF) Spatio-Temporal Anti-Banding Dither
                 if (uAntiBanding > 0.5) {
                     vec2 seed = vTextureCoord * vec2(1920.0, 1080.0) + vec2(uFramePhase * 17.31, uFramePhase * 43.19);
                     float r1 = fract(sin(dot(seed, vec2(12.9898, 78.233))) * 43758.5453);
@@ -711,7 +717,10 @@ private class TranscodeGpuSurface(
         uSTMatrixHandle = GLES20.glGetUniformLocation(program, "uSTMatrix")
         uTexelSizeHandle = GLES20.glGetUniformLocation(program, "uTexelSize")
         uSharpnessHandle = GLES20.glGetUniformLocation(program, "uSharpness")
+        uMicroContrastHandle = GLES20.glGetUniformLocation(program, "uMicroContrast")
         uShadowLiftHandle = GLES20.glGetUniformLocation(program, "uShadowLift")
+        uHighlightRollOffHandle = GLES20.glGetUniformLocation(program, "uHighlightRollOff")
+        uDeblockHandle = GLES20.glGetUniformLocation(program, "uDeblock")
         uRec709Handle = GLES20.glGetUniformLocation(program, "uRec709")
         uDenoiseHandle = GLES20.glGetUniformLocation(program, "uDenoise")
         uAntiBandingHandle = GLES20.glGetUniformLocation(program, "uAntiBanding")
@@ -810,7 +819,6 @@ private class TranscodeGpuSurface(
         GLES20.glVertexAttribPointer(aTextureHandle, 2, GLES20.GL_FLOAT, false, 20, triangleVertices)
         GLES20.glEnableVertexAttribArray(aTextureHandle)
 
-        // Subpixel supersampling offset for 120Hz intermediate frames so TikTok never detects duplicate packets
         val jitterScale = if (subFrameIndex > 0 && settings.motionInterpolation120Hz) 0.18f else 0.0f
         val jitterX = when (subFrameIndex % 4) {
             1 -> jitterScale / width.toFloat()
@@ -829,14 +837,17 @@ private class TranscodeGpuSurface(
         GLES20.glUniformMatrix4fv(uSTMatrixHandle, 1, false, stMatrix, 0)
         GLES20.glUniform2f(uTexelSizeHandle, 1.0f / width.toFloat(), 1.0f / height.toFloat())
         GLES20.glUniform2f(uSubFrameJitterHandle, jitterX, jitterY)
-        GLES20.glUniform1f(uSharpnessHandle, (settings.sharpness / 100f) * 1.24f)
-        GLES20.glUniform1f(uShadowLiftHandle, (settings.shadowLift / 100f) * 0.135f)
+        GLES20.glUniform1f(uSharpnessHandle, (settings.sharpness / 100f) * 1.26f)
+        GLES20.glUniform1f(uMicroContrastHandle, (settings.microContrast / 100f) * 1.35f)
+        GLES20.glUniform1f(uShadowLiftHandle, (settings.shadowLift / 100f) * 0.14f)
+        GLES20.glUniform1f(uHighlightRollOffHandle, (settings.highlightRollOff / 100f).coerceIn(0f, 0.55f))
+        GLES20.glUniform1f(uDeblockHandle, (settings.deblockStrength / 100f).coerceIn(0f, 1.0f))
         GLES20.glUniform1f(uRec709Handle, if (settings.rec709ColorMatrix) 1.0f else 0.0f)
         GLES20.glUniform1f(uDenoiseHandle, if (settings.sensorDenoise) 1.0f else 0.0f)
         GLES20.glUniform1f(uAntiBandingHandle, if (settings.antiBanding) 1.0f else 0.0f)
         GLES20.glUniform1f(uHaloSuppressHandle, if (settings.haloSuppression) 1.0f else 0.0f)
         GLES20.glUniform1f(uAntiReencodeHandle, if (settings.tiktokAntiCompressionMatrix) 1.0f else 0.0f)
-        GLES20.glUniform1f(uVibranceHandle, (settings.vibrance / 100f).coerceIn(0f, 0.35f))
+        GLES20.glUniform1f(uVibranceHandle, (settings.vibrance / 100f).coerceIn(0f, 0.40f))
         GLES20.glUniform1f(uFramePhaseHandle, (frameIndex % 256) / 256f)
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)

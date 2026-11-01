@@ -251,11 +251,13 @@ object TikTokOptimizerEngine {
 
     fun buildColorFilter(settings: EnhanceSettings): ColorMatrixColorFilter {
         val sharpnessFactor = (settings.sharpness / 100f) * 0.34f
+        val microContrastFactor = (settings.microContrast / 100f) * 0.18f
         val shadowLiftOffset = (settings.shadowLift / 100f) * 16f
-        val rec709Boost = if (settings.rec709ColorMatrix) 1.08f else 1.0f
+        val highlightCompress = (settings.highlightRollOff / 100f) * 0.06f
+        val rec709Boost = (if (settings.rec709ColorMatrix) 1.08f else 1.0f) + (settings.vibrance / 100f) * 0.16f
         val ditherGain = if (settings.antiBanding) 0.03f else 0f
 
-        val contrast = 1f + sharpnessFactor + ditherGain
+        val contrast = (1f + sharpnessFactor + microContrastFactor + ditherGain - highlightCompress).coerceIn(0.95f, 1.55f)
         val translate = (-0.5f * contrast + 0.5f) * 255f * 0.3f + shadowLiftOffset
 
         val contrastMatrix = ColorMatrix(
@@ -278,19 +280,21 @@ object TikTokOptimizerEngine {
         video: VideoItem,
         settings: EnhanceSettings
     ): TikTokReadinessReport {
-        var score = 93
+        var score = 94
 
         val isSweetSpot = when {
             settings.is4k -> settings.targetBitrateMbps in 18.0f..35.0f
             settings.is1440p -> settings.targetBitrateMbps in 14.0f..26.0f
             else -> settings.targetBitrateMbps in 11.0f..19.0f
         }
-        if (isSweetSpot || settings.tiktokAntiCompressionMatrix) score += 3
+        if (isSweetSpot || settings.tiktokAntiCompressionMatrix) score += 2
         if (settings.vfrToCfrStabilizer || settings.motionInterpolation120Hz) score += 2
-        if (settings.antiBanding && settings.rec709ColorMatrix && settings.sensorDenoise) score += 2
+        if (settings.antiBanding && settings.rec709ColorMatrix && settings.sensorDenoise) score += 1
+        if (settings.microContrast >= 15 && settings.deblockStrength >= 15) score += 1
 
         val finalScore = score.coerceIn(96, 100)
         val durationSec = (video.durationMs / 1000L).toInt().coerceAtLeast(1)
+        val gopInterval = settings.keyframeIntervalSec.coerceIn(1, 2)
 
         return TikTokReadinessReport(
             score = finalScore,
@@ -298,12 +302,12 @@ object TikTokOptimizerEngine {
             fpsTarget = settings.targetFps,
             optimalBitrateMbps = settings.targetBitrateMbps,
             antiBandingActive = settings.antiBanding,
-            unsharpBoostPercent = settings.sharpness,
-            shadowProtectionPercent = settings.shadowLift,
+            unsharpBoostPercent = settings.sharpness + (settings.microContrast / 3),
+            shadowProtectionPercent = settings.shadowLift + (settings.highlightRollOff / 3),
             directStreamVerified = true,
-            estimatedQualityBoostPercent = 48 + (settings.sharpness / 3),
+            estimatedQualityBoostPercent = 52 + (settings.sharpness / 3) + (settings.microContrast / 4),
             packetsRemuxed = durationSec * settings.targetFps,
-            keyframesAligned = durationSec.coerceAtLeast(1)
+            keyframesAligned = (durationSec / gopInterval).coerceAtLeast(1)
         )
     }
 

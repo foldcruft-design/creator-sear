@@ -16,17 +16,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -50,16 +49,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.theme.GlassBackground
-import com.example.ui.theme.GlassBorder
-import com.example.ui.theme.GlassBorderGlow
-import com.example.ui.theme.GlassBorderSubtle
-import com.example.ui.theme.GlassButtonBg
-import com.example.ui.theme.GlassButtonBgPressed
-import com.example.ui.theme.GlassButtonBorder
-import com.example.ui.theme.GlassObsidian
-import com.example.ui.theme.GlassSurface
-import com.example.ui.theme.GlassSurfaceElevated
 import com.example.ui.theme.GlassTextMuted
 import com.example.ui.theme.GlassTextPrimary
 import com.example.ui.theme.GlassTextSecondary
@@ -70,10 +59,10 @@ fun GlassCard(
     cornerRadius: Dp = 22.dp,
     onClick: (() -> Unit)? = null,
     borderBrush: Brush = Brush.verticalGradient(
-        colors = listOf(Color(0x40FFFFFF), Color(0x0EFFFFFF))
+        colors = listOf(Color(0x2CFFFFFF), Color(0x09FFFFFF))
     ),
     backgroundBrush: Brush = Brush.verticalGradient(
-        colors = listOf(Color(0x1EFFFFFF), Color(0x0AFFFFFF))
+        colors = listOf(Color(0xD90B0E14), Color(0xE607090D))
     ),
     content: @Composable BoxScope.() -> Unit
 ) {
@@ -109,13 +98,13 @@ fun GlassSurface(
             .clip(shape)
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(Color(0x16FFFFFF), Color(0x06FFFFFF))
+                    colors = listOf(Color(0xCC0D1017), Color(0xD9080A0F))
                 )
             )
             .border(
                 BorderStroke(
                     1.dp,
-                    Brush.verticalGradient(listOf(Color(0x28FFFFFF), Color(0x06FFFFFF)))
+                    Brush.verticalGradient(listOf(Color(0x22FFFFFF), Color(0x06FFFFFF)))
                 ),
                 shape
             ),
@@ -136,7 +125,6 @@ fun GlassButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
-    // Smooth spring animation on button click/press
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.96f else 1f,
         animationSpec = spring(dampingRatio = 0.65f, stiffness = 400f),
@@ -146,25 +134,25 @@ fun GlassButton(
     val bgBrush = if (isPrimary) {
         Brush.verticalGradient(
             colors = if (isPressed) {
-                listOf(Color(0x45FFFFFF), Color(0x25FFFFFF))
+                listOf(Color(0x30FFFFFF), Color(0x18FFFFFF))
             } else {
-                listOf(Color(0x2CFFFFFF), Color(0x14FFFFFF))
+                listOf(Color(0x20FFFFFF), Color(0x0DFFFFFF))
             }
         )
     } else {
         Brush.verticalGradient(
             colors = if (isPressed) {
-                listOf(Color(0x30FFFFFF), Color(0x16FFFFFF))
+                listOf(Color(0x1EFFFFFF), Color(0x0EFFFFFF))
             } else {
-                listOf(Color(0x18FFFFFF), Color(0x08FFFFFF))
+                listOf(Color(0xCC0D1017), Color(0xD9080A0E))
             }
         )
     }
 
     val borderStroke = if (isPrimary) {
-        BorderStroke(1.dp, Brush.verticalGradient(listOf(Color(0x60FFFFFF), Color(0x1CFFFFFF))))
+        BorderStroke(1.dp, Brush.verticalGradient(listOf(Color(0x52FFFFFF), Color(0x16FFFFFF))))
     } else {
-        BorderStroke(1.dp, Brush.verticalGradient(listOf(Color(0x30FFFFFF), Color(0x0CFFFFFF))))
+        BorderStroke(1.dp, Brush.verticalGradient(listOf(Color(0x28FFFFFF), Color(0x0AFFFFFF))))
     }
 
     Button(
@@ -174,14 +162,17 @@ fun GlassButton(
         interactionSource = interactionSource,
         colors = ButtonDefaults.buttonColors(
             containerColor = Color.Transparent,
-            disabledContainerColor = Color(0x0AFFFFFF)
+            disabledContainerColor = Color(0x08FFFFFF)
         ),
-        border = if (enabled) borderStroke else BorderStroke(1.dp, Color(0x10FFFFFF)),
-        contentPadding = PaddingValues(horizontal = 22.dp, vertical = 15.dp),
+        border = if (enabled) borderStroke else BorderStroke(1.dp, Color(0x0CFFFFFF)),
+        contentPadding = PaddingValues(horizontal = 22.dp, vertical = 14.dp),
         modifier = modifier
             .scale(scale)
             .height(50.dp)
-            .background(if (enabled) bgBrush else Brush.linearGradient(listOf(Color(0x0EFFFFFF), Color(0x05FFFFFF))), shape)
+            .background(
+                if (enabled) bgBrush else Brush.linearGradient(listOf(Color(0x0AFFFFFF), Color(0x04FFFFFF))),
+                shape
+            )
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically
@@ -215,8 +206,8 @@ fun GlassBadge(
     icon: ImageVector? = null,
     active: Boolean = true
 ) {
-    val bg = if (active) Color(0x22FFFFFF) else Color(0x0DFFFFFF)
-    val borderCol = if (active) Color(0x45FFFFFF) else Color(0x18FFFFFF)
+    val bg = if (active) Color(0x1AFFFFFF) else Color(0xCC0B0E14)
+    val borderCol = if (active) Color(0x38FFFFFF) else Color(0x16FFFFFF)
     val textColor = if (active) GlassTextPrimary else GlassTextSecondary
 
     Box(
@@ -261,9 +252,13 @@ fun GlassSlider(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
-            .background(Color(0x12FFFFFF))
-            .border(BorderStroke(1.dp, Color(0x22FFFFFF)), RoundedCornerShape(18.dp))
-            .padding(horizontal = 16.dp, vertical = 14.dp)
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(Color(0xD90B0E15), Color(0xE607090D))
+                )
+            )
+            .border(BorderStroke(1.dp, Color(0x1EFFFFFF)), RoundedCornerShape(18.dp))
+            .padding(horizontal = 16.dp, vertical = 13.dp)
     ) {
         Column {
             Row(
@@ -273,19 +268,27 @@ fun GlassSlider(
                 Text(
                     text = title,
                     color = GlassTextSecondary,
-                    fontSize = 13.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.weight(1f)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = valueText,
-                    color = GlassTextPrimary,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    softWrap = false
-                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0x14FFFFFF))
+                        .border(1.dp, Color(0x28FFFFFF), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                ) {
+                    Text(
+                        text = valueText,
+                        color = GlassTextPrimary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(4.dp))
             Slider(
@@ -294,8 +297,8 @@ fun GlassSlider(
                 valueRange = valueRange,
                 colors = SliderDefaults.colors(
                     thumbColor = Color.White,
-                    activeTrackColor = Color(0xD0FFFFFF),
-                    inactiveTrackColor = Color(0x22FFFFFF)
+                    activeTrackColor = Color(0xB8FFFFFF),
+                    inactiveTrackColor = Color(0x18FFFFFF)
                 )
             )
         }
@@ -320,8 +323,8 @@ fun GlassTextField(
             .fillMaxWidth()
             .height(50.dp)
             .clip(shape)
-            .background(Color(0x14FFFFFF))
-            .border(BorderStroke(1.dp, Color(0x2AFFFFFF)), shape)
+            .background(Color(0xD90A0D13))
+            .border(BorderStroke(1.dp, Color(0x24FFFFFF)), shape)
             .padding(horizontal = 14.dp),
         contentAlignment = Alignment.CenterStart
     ) {
@@ -372,10 +375,6 @@ fun GlassTextField(
     }
 }
 
-/**
- * Noticeable glowing verified checkmark badge that indicates a registered creator account.
- * Pure frosted glass styling without bright blue accents.
- */
 @Composable
 fun VerifiedBadge(
     modifier: Modifier = Modifier,
@@ -409,5 +408,3 @@ fun VerifiedBadge(
         )
     }
 }
-
-

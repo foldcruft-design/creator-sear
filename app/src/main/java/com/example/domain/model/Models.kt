@@ -4,58 +4,91 @@ import android.net.Uri
 
 enum class PresetType(
     val title: String,
+    val titleEn: String,
     val description: String,
+    val descriptionEn: String,
     val defaultSharpness: Int,
+    val defaultMicroContrast: Int,
     val defaultShadowLift: Int,
+    val defaultHighlightRollOff: Int,
+    val defaultDeblock: Int,
     val defaultAntiBanding: Boolean,
     val defaultVibrance: Int,
     val defaultBitrateMbps: Float
 ) {
     TIKTOK_ULTRA(
         title = "TikTok Crystal Bypass",
-        description = "Филигранная 9-точечная CAS резкость, предкомпенсация частот и защита от пережатия TikTok.",
+        titleEn = "TikTok Crystal Bypass",
+        description = "Эталонная 9-точечная CAS резкость, микроконтраст текстур и полный обход пережатия ByteVC1.",
+        descriptionEn = "Reference 9-tap CAS sharpness, micro-contrast clarity, and full ByteVC1 re-encode bypass.",
         defaultSharpness = 54,
+        defaultMicroContrast = 28,
         defaultShadowLift = 11,
+        defaultHighlightRollOff = 20,
+        defaultDeblock = 35,
         defaultAntiBanding = true,
         defaultVibrance = 12,
         defaultBitrateMbps = 14.2f
     ),
+    HIGH_MOTION(
+        title = "Динамика 120 Hz Pro",
+        titleEn = "120 Hz Motion Reference",
+        description = "Максимальная чёткость контуров в быстром движении, субкадровая плавность 120 FPS и GOP 1 сек.",
+        descriptionEn = "Maximum motion edge definition, 120 FPS sub-frame cadence, and 1s closed GOP.",
+        defaultSharpness = 60,
+        defaultMicroContrast = 32,
+        defaultShadowLift = 10,
+        defaultHighlightRollOff = 22,
+        defaultDeblock = 42,
+        defaultAntiBanding = true,
+        defaultVibrance = 11,
+        defaultBitrateMbps = 16.5f
+    ),
     NIGHT_AESTHETIC(
-        title = "Ночной Aesthetic",
-        description = "Хрома-шумоподавление и подъём теней (+18%) для тёмных рилсов, 10-bit TPDF дизеринг градиентов.",
-        defaultSharpness = 44,
+        title = "Ночной Obsidian HDR",
+        titleEn = "Night Obsidian HDR",
+        description = "Глубокое подавление хрома-шума, деблокинг теней (+18% IRE) и 10-bit TPDF защита градиентов.",
+        descriptionEn = "Deep chroma denoise, shadow toe recovery (+18% IRE), and 10-bit TPDF gradient protection.",
+        defaultSharpness = 46,
+        defaultMicroContrast = 24,
         defaultShadowLift = 18,
+        defaultHighlightRollOff = 26,
+        defaultDeblock = 50,
         defaultAntiBanding = true,
         defaultVibrance = 15,
         defaultBitrateMbps = 14.8f
     ),
     VLOG_PORTRAIT(
-        title = "Портрет & Влог",
-        description = "Естественная текстура кожи, микро-детали глаз и волос без искусственного перешарпа.",
-        defaultSharpness = 42,
-        defaultShadowLift = 8,
+        title = "Портрет & Детали кожи",
+        titleEn = "Portrait & Skin Clarity",
+        description = "Деликатный микроконтраст глаз и волос с защитой оттенков кожи от перешарпа и засветов.",
+        descriptionEn = "Delicate eye & hair micro-clarity with skin-tone protection and soft highlight roll-off.",
+        defaultSharpness = 44,
+        defaultMicroContrast = 22,
+        defaultShadowLift = 9,
+        defaultHighlightRollOff = 28,
+        defaultDeblock = 30,
         defaultAntiBanding = true,
         defaultVibrance = 9,
         defaultBitrateMbps = 13.8f
     ),
-    HIGH_MOTION(
-        title = "Динамика 120 FPS",
-        description = "Чёткость контуров при быстром движении и танцах, межкадровая плавность без смазывания.",
-        defaultSharpness = 58,
-        defaultShadowLift = 10,
-        defaultAntiBanding = true,
-        defaultVibrance = 11,
-        defaultBitrateMbps = 16.5f
-    ),
     CUSTOM(
-        title = "Ручной режим",
-        description = "Точная калибровка резкости, кривой теней и битрейта под конкретное видео.",
+        title = "Ручная студия",
+        titleEn = "Custom Studio",
+        description = "Индивидуальная калибровка 32-bit GPU шейдера, кривых яркости, GOP и битрейта.",
+        descriptionEn = "Manual calibration of the 32-bit GPU shader, luma curves, GOP cadence, and bitrate.",
         defaultSharpness = 54,
+        defaultMicroContrast = 26,
         defaultShadowLift = 11,
+        defaultHighlightRollOff = 20,
+        defaultDeblock = 35,
         defaultAntiBanding = true,
         defaultVibrance = 12,
         defaultBitrateMbps = 14.2f
-    )
+    );
+
+    fun displayTitle(isRu: Boolean): String = if (isRu) title else titleEn
+    fun displayDescription(isRu: Boolean): String = if (isRu) description else descriptionEn
 }
 
 object VideoResolutionPresets {
@@ -68,19 +101,21 @@ object VideoResolutionPresets {
     fun labelFor(res: String): String = when {
         res.contains("2160") || res.contains("4K", ignoreCase = true) -> "4K UHD"
         res.contains("1440") || res.contains("2K", ignoreCase = true) -> "2K QHD"
+        res.contains("720") -> "720p HD"
         else -> "1080p FHD"
     }
 
     fun dimensionsFor(res: String): Pair<Int, Int> = when {
         res.contains("2160") || res.contains("4K", ignoreCase = true) -> Pair(2160, 3840)
         res.contains("1440") || res.contains("2K", ignoreCase = true) -> Pair(1440, 2560)
+        res.contains("720") -> Pair(720, 1280)
         else -> Pair(1080, 1920)
     }
 
     /**
      * Calibrated TikTok ByteVC1 / H.264 High-Profile Anti-Reencode Sweet-Spot Bitrate (in Mbps).
      * Keeps peak stream bitrate strictly below TikTok's forced-downsampling threshold while
-     * maximizing luma bits-per-pixel with CABAC + Chroma Denoise.
+     * maximizing luma bits-per-pixel with CABAC + Chroma Denoise + Pre-Deblocking.
      */
     fun optimalSweetSpotBitrate(res: String, fps: Int): Float = when {
         res.contains("2160") || res.contains("4K", ignoreCase = true) -> when {
@@ -118,7 +153,10 @@ object VideoFpsPresets {
 data class EnhanceSettings(
     val preset: PresetType = PresetType.TIKTOK_ULTRA,
     val sharpness: Int = 54,
+    val microContrast: Int = 26,
     val shadowLift: Int = 11,
+    val highlightRollOff: Int = 20,
+    val deblockStrength: Int = 35,
     val antiBanding: Boolean = true,
     val sensorDenoise: Boolean = true,
     val rec709ColorMatrix: Boolean = true,
@@ -128,6 +166,7 @@ data class EnhanceSettings(
     val targetBitrateMbps: Float = 14.2f,
     val targetFps: Int = 60,
     val targetResolution: String = VideoResolutionPresets.RES_1080P,
+    val keyframeIntervalSec: Int = 1,
     val motionInterpolation120Hz: Boolean = true,
     val deepMultiPass: Boolean = true,
     val haloSuppression: Boolean = true,
@@ -165,14 +204,14 @@ data class VideoItem(
 }
 
 enum class ProcessingStage(val step: Int, val title: String, val detail: String) {
-    ANALYZING(1, "Скан GOP & структуры потока", "Анализ макроблоков, IDR ключевых кадров и джиттера таймингов..."),
-    MOTION_CADENCE(2, "Оптический поток & Анализ движения", "Расчёт векторов смещения и каденции развертки 120 Гц..."),
-    MOTION_SMOOTHING(3, "Субкадровая интерполяция 120 Hz", "Временной FBO-морфинг и выравнивание межкадрового тайминга..."),
-    SHARPENING(4, "9-точечный CAS & Предкомпенсация", "Филигранное усиление микротекстур (highp 32-bit) без ореолов..."),
-    DYNAMIC_RANGE(5, "Защита теней (16-235 IRE) & TPDF", "Хрома-денойз, подъём тёмных тонов и 10-bit дизеринг градиентов..."),
-    COLOR_CALIBRATION(6, "Калибровка Studio Rec.709", "Внедрение цветовых матриц BT.709 и перцептивный контраст..."),
-    ENCODING(7, "Сборка High-Profile CABAC потока", "Кодирование с защитой от пережатия TikTok и fast-start атомом..."),
-    VALIDATION(8, "Верификация Anti-Compression 4K/120Hz", "Финальная проверка обхода агрессивного транскодера TikTok..."),
+    ANALYZING(1, "Скан GOP & Деблокинг исходника", "Очистка блочных артефактов, анализ IDR-кадров и джиттера..."),
+    MOTION_CADENCE(2, "Оптический поток & Сетка 120 Гц", "Расчёт векторов смещения и выравнивание каденции VFR → CFR..."),
+    MOTION_SMOOTHING(3, "Субкадровая интерполяция 120 Hz", "Временной FBO-морфинг и субпиксельное сглаживание движения..."),
+    SHARPENING(4, "9-Tap CAS & Микроконтраст (32-bit)", "Филигранное усиление текстур и предкомпенсация частот без ореолов..."),
+    DYNAMIC_RANGE(5, "Кривые 16-235 IRE & TPDF Дизеринг", "Защита глубоких теней, мягкий клиппинг светов и 10-bit дизеринг..."),
+    COLOR_CALIBRATION(6, "Калибровка Studio Rec.709", "Внедрение матриц BT.709 и перцептивный баланс оттенков кожи..."),
+    ENCODING(7, "Сборка High-Profile CABAC потока", "Аппаратное кодирование Sweet-Spot с защитой от пережатия TikTok..."),
+    VALIDATION(8, "Верификация Anti-Compression 4K/120Hz", "Финальная проверка обхода агрессивного транскодера соцсетей..."),
     COMPLETED(9, "Готово!", "Видео филигранно оптимизировано и защищено от сжатия TikTok.")
 }
 

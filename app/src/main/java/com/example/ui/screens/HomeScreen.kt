@@ -163,8 +163,8 @@ fun HomeScreen(
                 Brush.verticalGradient(
                     colors = listOf(
                         GlassObsidian,
-                        Color(0xFF090B0E),
-                        Color(0xFF0B0D12)
+                        Color(0xFF05070B),
+                        Color(0xFF07090E)
                     )
                 )
             )
@@ -209,10 +209,8 @@ fun HomeScreen(
                             onSelectResolutionAndFps = { res, fps ->
                                 activeSettingsRepo.setTargetResolutionAndFps(res, fps)
                             },
-                            onVfrToggle = { enabled ->
-                                activeSettingsRepo.updateSettings(
-                                    enhanceSettings.copy(vfrToCfrStabilizer = enabled)
-                                )
+                            onSelectPreset = { preset ->
+                                activeSettingsRepo.applyPreset(preset)
                             },
                             onOpenSettingsTab = { currentTab = 2 },
                             onUploadClick = {
@@ -486,8 +484,8 @@ private fun TopBar(
                 modifier = Modifier
                     .size(34.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(Color(0x20FFFFFF))
-                    .border(1.dp, Color(0x35FFFFFF), RoundedCornerShape(10.dp)),
+                    .background(Color(0xE6111622))
+                    .border(1.dp, Color(0x38FFFFFF), RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -515,7 +513,7 @@ private fun TopBar(
             modifier = Modifier
                 .height(34.dp)
                 .clip(RoundedCornerShape(17.dp))
-                .background(Color(0x16FFFFFF))
+                .background(Color(0xD90A0D14))
                 .border(1.dp, Color(0x2EFFFFFF), RoundedCornerShape(17.dp))
                 .clickable(onClick = onLanguageToggle)
                 .padding(horizontal = 10.dp)
@@ -554,7 +552,7 @@ private fun TopBar(
             modifier = Modifier
                 .height(34.dp)
                 .clip(RoundedCornerShape(17.dp))
-                .background(if (isRegistered) Color(0x2EFFFFFF) else Color(0x18FFFFFF))
+                .background(if (isRegistered) Color(0xE6181F2D) else Color(0xD90B0E15))
                 .border(if (isRegistered) 1.2.dp else 1.dp, pillBorder, RoundedCornerShape(17.dp))
                 .clickable(onClick = onUserClick)
                 .padding(horizontal = 9.dp)
@@ -620,7 +618,7 @@ private fun OptimizerZilemContent(
     enhancedFile: File?,
     savedGalleryPath: String?,
     onSelectResolutionAndFps: (String, Int) -> Unit,
-    onVfrToggle: (Boolean) -> Unit,
+    onSelectPreset: (com.example.domain.model.PresetType) -> Unit,
     onOpenSettingsTab: () -> Unit,
     onUploadClick: () -> Unit,
     onSelectDemoVideo: () -> Unit,
@@ -674,19 +672,19 @@ private fun OptimizerZilemContent(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // The Central Glass Optimizer Card
+                // The Central Obsidian Smoked-Glass Optimizer Card
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(26.dp))
                         .background(
                             Brush.verticalGradient(
-                                colors = listOf(Color(0x18FFFFFF), Color(0x0AFFFFFF))
+                                colors = listOf(Color(0xD90B0E15), Color(0xEB06080C))
                             )
                         )
                         .border(
                             1.dp,
-                            Brush.verticalGradient(listOf(Color(0x38FFFFFF), Color(0x0CFFFFFF))),
+                            Brush.verticalGradient(listOf(Color(0x38FFFFFF), Color(0x0EFFFFFF))),
                             RoundedCornerShape(26.dp)
                         )
                         .padding(18.dp)
@@ -699,8 +697,8 @@ private fun OptimizerZilemContent(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(Color(0x12FFFFFF))
-                                .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(14.dp))
+                                .background(Color(0xD907090E))
+                                .border(1.dp, Color(0x26FFFFFF), RoundedCornerShape(14.dp))
                                 .clickable(onClick = onOpenSettingsTab)
                                 .padding(horizontal = 12.dp, vertical = 9.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -718,7 +716,7 @@ private fun OptimizerZilemContent(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "${settings.targetResolution} · ${settings.targetFps} FPS · ${settings.targetBitrateMbps} Mbps · +${settings.sharpness}%",
+                                    text = "${settings.targetResolution} · ${settings.targetFps} FPS · ${settings.targetBitrateMbps} Mbps · CAS +${settings.sharpness}%",
                                     color = Color.White,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Medium,
@@ -735,15 +733,43 @@ private fun OptimizerZilemContent(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Studio Algorithm Preset Selector Row (4 Equal Chips)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(Color(0xD907090D))
+                                .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(14.dp))
+                                .padding(5.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            val quickPresets = listOf(
+                                com.example.domain.model.PresetType.TIKTOK_ULTRA to (if (strings.isRu) "Crystal" else "Crystal"),
+                                com.example.domain.model.PresetType.HIGH_MOTION to (if (strings.isRu) "120 Hz" else "120 Hz"),
+                                com.example.domain.model.PresetType.NIGHT_AESTHETIC to (if (strings.isRu) "Ночь HDR" else "Night HDR"),
+                                com.example.domain.model.PresetType.VLOG_PORTRAIT to (if (strings.isRu) "Портрет" else "Portrait")
+                            )
+                            quickPresets.forEach { (preset, shortLabel) ->
+                                QuickQualityChip(
+                                    label = shortLabel,
+                                    selected = settings.preset == preset,
+                                    onClick = { onSelectPreset(preset) },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
 
                         // Interactive Quick Quality Mode Selector: 1080p / 2K / 4K and 30 / 60 / 120 FPS
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(16.dp))
-                                .background(Color(0x0EFFFFFF))
-                                .border(1.dp, Color(0x1EFFFFFF), RoundedCornerShape(16.dp))
+                                .background(Color(0xD907090D))
+                                .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(16.dp))
                                 .padding(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
@@ -830,15 +856,19 @@ private fun OptimizerZilemContent(
 
                         Spacer(modifier = Modifier.height(14.dp))
 
-                        // Large "Drop your video here" Zone
+                        // Large "Drop your video here" Zone (Deep Smoked Glass)
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(20.dp))
-                                .background(Color(0x0CFFFFFF))
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(Color(0xD9080A10), Color(0xEB05070B))
+                                    )
+                                )
                                 .border(
                                     1.dp,
-                                    Brush.verticalGradient(listOf(Color(0x28FFFFFF), Color(0x0EFFFFFF))),
+                                    Brush.verticalGradient(listOf(Color(0x32FFFFFF), Color(0x10FFFFFF))),
                                     RoundedCornerShape(20.dp)
                                 )
                                 .clickable(onClick = onUploadClick)
@@ -1204,8 +1234,8 @@ private fun SpecPill(
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
-            .background(Color(0x10FFFFFF))
-            .border(1.dp, Color(0x1AFFFFFF), RoundedCornerShape(14.dp))
+            .background(Color(0xD907090E))
+            .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(14.dp))
             .padding(vertical = 8.dp, horizontal = 4.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -1246,8 +1276,12 @@ private fun FAQAccordion(item: FAQItemText) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
-            .background(Color(0x10FFFFFF))
-            .border(1.dp, Color(0x20FFFFFF), RoundedCornerShape(18.dp))
+            .background(
+                Brush.verticalGradient(
+                    listOf(Color(0xD90A0D14), Color(0xEB06080C))
+                )
+            )
+            .border(1.dp, Color(0x24FFFFFF), RoundedCornerShape(18.dp))
             .clickable { expanded = !expanded }
             .animateContentSize()
             .padding(horizontal = 18.dp, vertical = 14.dp)
@@ -1527,10 +1561,14 @@ private fun BottomNavigationBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(26.dp))
-                .background(Color(0xD90E1015))
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color(0xEB0A0D14), Color(0xF505070B))
+                    )
+                )
                 .border(
                     1.dp,
-                    Brush.verticalGradient(listOf(Color(0x40FFFFFF), Color(0x10FFFFFF))),
+                    Brush.verticalGradient(listOf(Color(0x40FFFFFF), Color(0x12FFFFFF))),
                     RoundedCornerShape(26.dp)
                 )
                 .padding(horizontal = 8.dp, vertical = 8.dp),
@@ -1585,14 +1623,20 @@ private fun NavTabItem(
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(18.dp))
-            .background(if (isSelected) Color(0x35FFFFFF) else Color.Transparent)
+            .background(
+                if (isSelected) {
+                    Brush.verticalGradient(listOf(Color(0xF01C2332), Color(0xF5111520)))
+                } else {
+                    Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
+                }
+            )
             .border(
                 1.dp,
-                if (isSelected) Color(0x60FFFFFF) else Color.Transparent,
+                if (isSelected) Color(0x78FFFFFF) else Color.Transparent,
                 RoundedCornerShape(18.dp)
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .padding(horizontal = 14.dp, vertical = 8.dp)
             .testTag(testTag),
         contentAlignment = Alignment.Center
     ) {
@@ -1642,14 +1686,14 @@ private fun QuickQualityChip(
             .clip(RoundedCornerShape(12.dp))
             .background(
                 if (selected) {
-                    Brush.verticalGradient(listOf(Color(0x3DFFFFFF), Color(0x22FFFFFF)))
+                    Brush.verticalGradient(listOf(Color(0xF01C2230), Color(0xF5111520)))
                 } else {
-                    Brush.verticalGradient(listOf(Color(0x12FFFFFF), Color(0x08FFFFFF)))
+                    Brush.verticalGradient(listOf(Color(0x990A0D14), Color(0xB307090E)))
                 }
             )
             .border(
                 1.dp,
-                if (selected) Color(0x78FFFFFF) else Color(0x22FFFFFF),
+                if (selected) Color(0x88FFFFFF) else Color(0x20FFFFFF),
                 RoundedCornerShape(12.dp)
             )
             .clickable(onClick = onClick)

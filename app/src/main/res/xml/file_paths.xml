@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <cache-path name="camera_captures" path="camera_captures/" />
+    <cache-path name="enhanced_videos" path="enhanced_videos/" />
+    <files-path name="app_files" path="." />
+</paths>

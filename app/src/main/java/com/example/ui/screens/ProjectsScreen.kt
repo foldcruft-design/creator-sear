@@ -130,7 +130,7 @@ fun ProjectCard(
             .clip(RoundedCornerShape(22.dp))
             .background(
                 Brush.verticalGradient(
-                    listOf(Color(0x1EFFFFFF), Color(0x0CFFFFFF))
+                    listOf(Color(0xD90B0E15), Color(0xEB06080C))
                 )
             )
             .border(
@@ -145,12 +145,12 @@ fun ProjectCard(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
         ) {
-            // Frosted Play thumb
+            // Smoked Glass Play thumb
             Box(
                 modifier = Modifier
                     .size(56.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0x24FFFFFF))
+                    .background(Color(0xE6121722))
                     .border(1.dp, Color(0x40FFFFFF), RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center
             ) {

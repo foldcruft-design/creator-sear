@@ -68,4 +68,25 @@ class ExampleUnitTest {
         assertEquals("Настройки", ruStrings.tabSettings)
         assertEquals("Скачать видео в Галерею", ruStrings.downloadToGalleryBtn)
     }
+
+    @Test
+    fun testStudioPresetCalibrationAndShaderSettings() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val repo = SettingsRepository(context)
+
+        repo.applyPreset(PresetType.HIGH_MOTION)
+        val motionSettings = repo.settings.value
+        assertEquals(PresetType.HIGH_MOTION, motionSettings.preset)
+        assertEquals(120, motionSettings.targetFps)
+        assertEquals(PresetType.HIGH_MOTION.defaultMicroContrast, motionSettings.microContrast)
+        assertEquals(PresetType.HIGH_MOTION.defaultDeblock, motionSettings.deblockStrength)
+
+        repo.applyPreset(PresetType.NIGHT_AESTHETIC)
+        val nightSettings = repo.settings.value
+        assertEquals(PresetType.NIGHT_AESTHETIC, nightSettings.preset)
+        assertEquals(PresetType.NIGHT_AESTHETIC.defaultShadowLift, nightSettings.shadowLift)
+        assertEquals(PresetType.NIGHT_AESTHETIC.defaultHighlightRollOff, nightSettings.highlightRollOff)
+    }
 }
+
+
