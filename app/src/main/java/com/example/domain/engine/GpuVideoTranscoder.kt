@@ -234,7 +234,9 @@ object GpuVideoTranscoder {
                             newFormat.setInteger(MediaFormat.KEY_FRAME_RATE, targetFps)
                             newFormat.setInteger(MediaFormat.KEY_CAPTURE_RATE, targetFps)
                             muxerVideoTrack = muxer.addTrack(newFormat)
-                            if (audioTrackIndex != -1 && srcAudioFormat != null) {
+                            if (audioTrackIndex != -1 && srcAudioFormat != null &&
+                                settings.audioGuardMode != com.example.domain.model.AudioGuardMode.MUTE_FOR_TREND_SOUND
+                            ) {
                                 try {
                                     muxerAudioTrack = muxer.addTrack(srcAudioFormat)
                                 } catch (_: Exception) {

@@ -349,11 +349,9 @@ fun ProfileDialog(
 @Composable
 private fun FeatureCheckItem(text: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            imageVector = Icons.Default.Check,
-            contentDescription = null,
-            tint = Color.White,
-            modifier = Modifier.size(15.dp)
+        com.example.ui.components.TelegramCheckmark(
+            checked = true,
+            size = 16.dp
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(

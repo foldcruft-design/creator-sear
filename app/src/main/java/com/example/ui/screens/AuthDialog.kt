@@ -436,31 +436,12 @@ fun AuthDialog(
 
                             Spacer(modifier = Modifier.width(10.dp))
 
-                            // Clean Interactive Glass Checkbox
-                            Box(
-                                modifier = Modifier
-                                    .size(26.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(
-                                        if (enableVerifiedBadge) Color(0xE6FFFFFF) else Color(0x16FFFFFF)
-                                    )
-                                    .border(
-                                        1.dp,
-                                        if (enableVerifiedBadge) Color.White else Color(0x45FFFFFF),
-                                        RoundedCornerShape(8.dp)
-                                    )
-                                    .clickable { enableVerifiedBadge = !enableVerifiedBadge },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (enableVerifiedBadge) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Check,
-                                        contentDescription = "Checked",
-                                        tint = Color(0xFF0A0C10),
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
+                            // Animated Telegram-style Checkmark
+                            com.example.ui.components.TelegramCheckmark(
+                                checked = enableVerifiedBadge,
+                                size = 24.dp,
+                                onClick = { enableVerifiedBadge = !enableVerifiedBadge }
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(10.dp))

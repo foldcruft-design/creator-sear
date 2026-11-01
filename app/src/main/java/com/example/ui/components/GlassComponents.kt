@@ -1,8 +1,12 @@
 package com.example.ui.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +20,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -24,8 +29,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -39,19 +42,34 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.theme.GlassTextMuted
 import com.example.ui.theme.GlassTextPrimary
 import com.example.ui.theme.GlassTextSecondary
+import kotlin.math.cos
+import kotlin.math.roundToInt
+import kotlin.math.sin
+
+// Signature Telegram Cyan-Azure Gradient Colors
+val TelegramBlueLight = Color(0xFF39B9FF)
+val TelegramBluePrimary = Color(0xFF24A1DE)
+val TelegramBlueDeep = Color(0xFF167AC6)
 
 @Composable
 fun GlassCard(
@@ -276,13 +294,13 @@ fun GlassSlider(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0x14FFFFFF))
-                        .border(1.dp, Color(0x28FFFFFF), RoundedCornerShape(8.dp))
+                        .background(Color(0x1E24A1DE))
+                        .border(1.dp, Color(0x6639B9FF), RoundedCornerShape(8.dp))
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
                         text = valueText,
-                        color = GlassTextPrimary,
+                        color = Color.White,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -297,8 +315,8 @@ fun GlassSlider(
                 valueRange = valueRange,
                 colors = SliderDefaults.colors(
                     thumbColor = Color.White,
-                    activeTrackColor = Color(0xB8FFFFFF),
-                    inactiveTrackColor = Color(0x18FFFFFF)
+                    activeTrackColor = TelegramBlueLight,
+                    inactiveTrackColor = Color(0x1CFFFFFF)
                 )
             )
         }
@@ -363,7 +381,7 @@ fun GlassTextField(
                     visualTransformation = visualTransformation,
                     keyboardOptions = keyboardOptions,
                     keyboardActions = keyboardActions,
-                    cursorBrush = SolidColor(Color.White),
+                    cursorBrush = SolidColor(TelegramBlueLight),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -375,36 +393,310 @@ fun GlassTextField(
     }
 }
 
+/**
+ * Telegram-style Scalloped Star-Seal Verified Badge with luminous azure-cyan gradient
+ * and crisp rounded vector checkmark.
+ */
 @Composable
 fun VerifiedBadge(
     modifier: Modifier = Modifier,
-    size: Dp = 16.dp,
-    iconSize: Dp = 10.dp,
+    size: Dp = 18.dp,
+    iconSize: Dp = 11.dp,
     showGlow: Boolean = true
 ) {
-    Box(
+    Canvas(modifier = modifier.size(size)) {
+        val w = this.size.width
+        val h = this.size.height
+        val cx = w / 2f
+        val cy = h / 2f
+        val outerR = w * 0.48f
+        val innerR = w * 0.40f
+        val points = 16 // 8 smooth Telegram seal waves
+
+        if (showGlow) {
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(Color(0x5539B9FF), Color.Transparent),
+                    center = Offset(cx, cy),
+                    radius = w * 0.62f
+                ),
+                radius = w * 0.60f,
+                center = Offset(cx, cy)
+            )
+        }
+
+        val sealPath = Path()
+        for (i in 0 until points) {
+            val angle = (i * 2.0 * Math.PI / points) - Math.PI / 2.0
+            val r = if (i % 2 == 0) outerR else innerR
+            val px = cx + (r * cos(angle)).toFloat()
+            val py = cy + (r * sin(angle)).toFloat()
+            if (i == 0) {
+                sealPath.moveTo(px, py)
+            } else {
+                sealPath.lineTo(px, py)
+            }
+        }
+        sealPath.close()
+
+        drawPath(
+            path = sealPath,
+            brush = Brush.linearGradient(
+                colors = listOf(TelegramBlueLight, TelegramBluePrimary, TelegramBlueDeep),
+                start = Offset(0f, 0f),
+                end = Offset(w, h)
+            )
+        )
+
+        drawPath(
+            path = sealPath,
+            color = Color(0x88FFFFFF),
+            style = Stroke(width = w * 0.045f, join = StrokeJoin.Round)
+        )
+
+        // Crisp rounded Telegram checkmark inside
+        val checkPath = Path().apply {
+            moveTo(w * 0.30f, h * 0.52f)
+            lineTo(w * 0.44f, h * 0.66f)
+            lineTo(w * 0.72f, h * 0.36f)
+        }
+        drawPath(
+            path = checkPath,
+            color = Color.White,
+            style = Stroke(
+                width = (w * 0.115f).coerceAtLeast(1.8f),
+                cap = StrokeCap.Round,
+                join = StrokeJoin.Round
+            )
+        )
+    }
+}
+
+/**
+ * Iconic Telegram-style Animated Circular Checkmark with spring physics bounce,
+ * glowing cyan-azure gradient fill, and progressive stroke drawing.
+ */
+@Composable
+fun TelegramCheckmark(
+    checked: Boolean,
+    modifier: Modifier = Modifier,
+    size: Dp = 24.dp,
+    onClick: (() -> Unit)? = null
+) {
+    val progress by animateFloatAsState(
+        targetValue = if (checked) 1f else 0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "tg_check_progress"
+    )
+
+    val strokeProgress by animateFloatAsState(
+        targetValue = if (checked) 1f else 0f,
+        animationSpec = tween(durationMillis = 220),
+        label = "tg_check_stroke"
+    )
+
+    val clickMod = if (onClick != null) {
+        Modifier.clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null,
+            onClick = onClick
+        )
+    } else Modifier
+
+    Canvas(
         modifier = modifier
             .size(size)
-            .clip(CircleShape)
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(Color(0xE6FFFFFF), Color(0xB3E0E4EB))
+            .scale(0.92f + 0.08f * progress)
+            .then(clickMod)
+    ) {
+        val w = this.size.width
+        val h = this.size.height
+        val center = Offset(w / 2f, h / 2f)
+        val radius = (w / 2f) * 0.88f
+
+        // Unchecked smoked glass ring
+        drawCircle(
+            color = Color(0xCC0A0E16),
+            radius = radius,
+            center = center
+        )
+        drawCircle(
+            color = Color(0x3DFFFFFF),
+            radius = radius,
+            center = center,
+            style = Stroke(width = (w * 0.07f).coerceAtLeast(1.4f))
+        )
+
+        if (progress > 0.01f) {
+            // Subtle outer glow
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(Color(0x4539B9FF), Color.Transparent),
+                    center = center,
+                    radius = radius * 1.25f
+                ),
+                radius = radius * 1.22f * progress.coerceIn(0f, 1f),
+                center = center
+            )
+
+            // Animated Telegram cyan-blue circle fill
+            drawCircle(
+                brush = Brush.linearGradient(
+                    colors = listOf(TelegramBlueLight, TelegramBluePrimary, TelegramBlueDeep),
+                    start = Offset(0f, 0f),
+                    end = Offset(w, h)
+                ),
+                radius = radius * progress.coerceIn(0f, 1f),
+                center = center
+            )
+
+            // Specular highlight rim
+            drawCircle(
+                color = Color(0x99FFFFFF),
+                radius = radius * progress.coerceIn(0f, 1f),
+                center = center,
+                style = Stroke(width = (w * 0.05f).coerceAtLeast(1f))
+            )
+
+            // Progressive vector checkmark stroke
+            val fullCheckPath = Path().apply {
+                moveTo(w * 0.28f, h * 0.52f)
+                lineTo(w * 0.44f, h * 0.68f)
+                lineTo(w * 0.74f, h * 0.35f)
+            }
+            val partialPath = Path()
+            val pathMeasure = PathMeasure()
+            pathMeasure.setPath(fullCheckPath, false)
+            pathMeasure.getSegment(
+                0f,
+                pathMeasure.length * strokeProgress.coerceIn(0f, 1f),
+                partialPath,
+                true
+            )
+
+            drawPath(
+                path = partialPath,
+                color = Color.White,
+                style = Stroke(
+                    width = (w * 0.11f).coerceAtLeast(2.0f),
+                    cap = StrokeCap.Round,
+                    join = StrokeJoin.Round
                 )
             )
-            .border(
-                BorderStroke(
-                    1.dp,
-                    if (showGlow) Color(0xFFFFFFFF) else Color(0x80FFFFFF)
-                ),
-                CircleShape
-            ),
-        contentAlignment = Alignment.Center
+        }
+    }
+}
+
+/**
+ * Telegram-style Animated Toggle Switch with spring thumb travel,
+ * smoked obsidian inactive track, luminous Telegram azure active track,
+ * and an animated checkmark drawn inside the thumb.
+ */
+@Composable
+fun TelegramSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val thumbFraction by animateFloatAsState(
+        targetValue = if (checked) 1f else 0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "tg_switch_thumb"
+    )
+
+    val trackColorTop by animateColorAsState(
+        targetValue = if (checked) TelegramBlueLight else Color(0xFF0C1018),
+        animationSpec = tween(200),
+        label = "tg_track_top"
+    )
+    val trackColorBottom by animateColorAsState(
+        targetValue = if (checked) TelegramBlueDeep else Color(0xFF080B10),
+        animationSpec = tween(200),
+        label = "tg_track_bottom"
+    )
+    val borderColor by animateColorAsState(
+        targetValue = if (checked) Color(0x9970D0FF) else Color(0x2EFFFFFF),
+        animationSpec = tween(200),
+        label = "tg_border"
+    )
+
+    val switchWidth = 50.dp
+    val switchHeight = 28.dp
+    val thumbSize = 22.dp
+
+    Box(
+        modifier = modifier
+            .size(width = switchWidth, height = switchHeight)
+            .clip(CircleShape)
+            .background(Brush.verticalGradient(listOf(trackColorTop, trackColorBottom)))
+            .border(1.dp, borderColor, CircleShape)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) {
+                onCheckedChange(!checked)
+            }
+            .padding(horizontal = 3.dp),
+        contentAlignment = Alignment.CenterStart
     ) {
-        Icon(
-            imageVector = Icons.Filled.Check,
-            contentDescription = "Verified Account",
-            tint = Color(0xFF0A0C10),
-            modifier = Modifier.size(iconSize)
-        )
+        val maxOffsetPx = 22f // in dp
+        Box(
+            modifier = Modifier
+                .offset {
+                    IntOffset(
+                        x = (maxOffsetPx * thumbFraction * density).roundToInt(),
+                        y = 0
+                    )
+                }
+                .size(thumbSize)
+                .clip(CircleShape)
+                .background(Color.White)
+                .border(
+                    width = 1.dp,
+                    color = if (checked) Color(0xFFFFFFFF) else Color(0x44FFFFFF),
+                    shape = CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Canvas(modifier = Modifier.size(13.dp)) {
+                val w = size.width
+                val h = size.height
+                if (thumbFraction > 0.25f) {
+                    val checkAlpha = ((thumbFraction - 0.25f) / 0.75f).coerceIn(0f, 1f)
+                    val path = Path().apply {
+                        moveTo(w * 0.18f, h * 0.52f)
+                        lineTo(w * 0.42f, h * 0.76f)
+                        lineTo(w * 0.84f, h * 0.26f)
+                    }
+                    val partial = Path()
+                    val pm = PathMeasure()
+                    pm.setPath(path, false)
+                    pm.getSegment(0f, pm.length * checkAlpha, partial, true)
+
+                    drawPath(
+                        path = partial,
+                        color = TelegramBlueDeep.copy(alpha = checkAlpha),
+                        style = Stroke(
+                            width = (w * 0.17f).coerceAtLeast(1.8f),
+                            cap = StrokeCap.Round,
+                            join = StrokeJoin.Round
+                        )
+                    )
+                } else {
+                    val dotAlpha = (1f - thumbFraction * 4f).coerceIn(0f, 1f)
+                    drawCircle(
+                        color = Color(0xFF6B7485).copy(alpha = dotAlpha * 0.6f),
+                        radius = w * 0.16f,
+                        center = Offset(w / 2f, h / 2f)
+                    )
+                }
+            }
+        }
     }
 }

@@ -2,8 +2,10 @@ package com.example.data.repository
 
 import android.content.Context
 import com.example.domain.model.AppLanguage
+import com.example.domain.model.AudioGuardMode
 import com.example.domain.model.EnhanceSettings
 import com.example.domain.model.PresetType
+import com.example.domain.model.TargetPlatform
 import com.example.domain.model.VideoResolutionPresets
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +28,15 @@ class SettingsRepository(context: Context) {
     private fun loadSettings(): EnhanceSettings {
         val presetName = prefs.getString("preset_type", PresetType.TIKTOK_ULTRA.name) ?: PresetType.TIKTOK_ULTRA.name
         val preset = PresetType.values().find { it.name == presetName } ?: PresetType.TIKTOK_ULTRA
+
+        val platformName = prefs.getString("target_platform", TargetPlatform.TIKTOK_BYTEVC1.name)
+            ?: TargetPlatform.TIKTOK_BYTEVC1.name
+        val platform = TargetPlatform.values().find { it.name == platformName } ?: TargetPlatform.TIKTOK_BYTEVC1
+
+        val audioName = prefs.getString("audio_guard_mode", AudioGuardMode.STUDIO_AAC_320.name)
+            ?: AudioGuardMode.STUDIO_AAC_320.name
+        val audioMode = AudioGuardMode.values().find { it.name == audioName } ?: AudioGuardMode.STUDIO_AAC_320
+
         val res = prefs.getString("target_resolution", VideoResolutionPresets.RES_1080P)
             ?: VideoResolutionPresets.RES_1080P
         val fps = prefs.getInt("target_fps", 60)
@@ -33,6 +44,9 @@ class SettingsRepository(context: Context) {
 
         return EnhanceSettings(
             preset = preset,
+            targetPlatform = platform,
+            audioGuardMode = audioMode,
+            cleanMetadataGuard = prefs.getBoolean("clean_metadata_guard", true),
             sharpness = prefs.getInt("sharpness", preset.defaultSharpness),
             microContrast = prefs.getInt("micro_contrast", preset.defaultMicroContrast),
             shadowLift = prefs.getInt("shadow_lift", preset.defaultShadowLift),
@@ -64,6 +78,9 @@ class SettingsRepository(context: Context) {
         _settings.value = newSettings
         prefs.edit()
             .putString("preset_type", newSettings.preset.name)
+            .putString("target_platform", newSettings.targetPlatform.name)
+            .putString("audio_guard_mode", newSettings.audioGuardMode.name)
+            .putBoolean("clean_metadata_guard", newSettings.cleanMetadataGuard)
             .putInt("sharpness", newSettings.sharpness)
             .putInt("micro_contrast", newSettings.microContrast)
             .putInt("shadow_lift", newSettings.shadowLift)
@@ -102,6 +119,21 @@ class SettingsRepository(context: Context) {
                 vibrance = preset.defaultVibrance,
                 antiBanding = preset.defaultAntiBanding,
                 targetBitrateMbps = sweetSpot
+            )
+        )
+    }
+
+    fun applyPlatformProfile(platform: TargetPlatform) {
+        val current = _settings.value
+        updateSettings(
+            current.copy(
+                targetPlatform = platform,
+                targetResolution = platform.recommendedRes,
+                targetFps = platform.recommendedFps,
+                targetBitrateMbps = platform.recommendedBitrateMbps,
+                keyframeIntervalSec = platform.gopSec,
+                tiktokAntiCompressionMatrix = true,
+                rec709ColorMatrix = true
             )
         )
     }

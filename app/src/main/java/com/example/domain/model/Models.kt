@@ -1,5 +1,6 @@
 package com.example.domain.model
 
+import android.graphics.Bitmap
 import android.net.Uri
 
 enum class PresetType(
@@ -91,6 +92,110 @@ enum class PresetType(
     fun displayDescription(isRu: Boolean): String = if (isRu) description else descriptionEn
 }
 
+/**
+ * Creator Feature #9: Target Social Platform Profiles (1-Click Ingestion Bypass)
+ */
+enum class TargetPlatform(
+    val shortBadge: String,
+    val titleRu: String,
+    val titleEn: String,
+    val descRu: String,
+    val descEn: String,
+    val recommendedRes: String,
+    val recommendedFps: Int,
+    val recommendedBitrateMbps: Float,
+    val maxFileLimitMb: Int,
+    val gopSec: Int
+) {
+    TIKTOK_BYTEVC1(
+        shortBadge = "TikTok Bypass",
+        titleRu = "TikTok ByteVC1 Sweet-Spot",
+        titleEn = "TikTok ByteVC1 Sweet-Spot",
+        descRu = "Удерживает поток строго ниже порога принудительного пережатия TikTok (14.2 Mbps, GOP 1 сек, BT.709).",
+        descEn = "Keeps stream strictly below TikTok forced downsampling threshold (14.2 Mbps, 1s GOP, BT.709).",
+        recommendedRes = "1080 × 1920",
+        recommendedFps = 60,
+        recommendedBitrateMbps = 14.2f,
+        maxFileLimitMb = 287,
+        gopSec = 1
+    ),
+    YOUTUBE_SHORTS_VP9(
+        shortBadge = "YouTube VP9/AV1",
+        titleRu = "YouTube Shorts VP9 / AV1 Trigger",
+        titleEn = "YouTube Shorts VP9 / AV1 Trigger",
+        descRu = "Активирует премиальный кодек VP9/AV1 на серверах YouTube через 2K/4K 60 FPS и высокий BPP.",
+        descEn = "Triggers YouTube's premium VP9/AV1 server pipeline via 2K/4K 60 FPS high-BPP delivery.",
+        recommendedRes = "1440 × 2560",
+        recommendedFps = 60,
+        recommendedBitrateMbps = 21.5f,
+        maxFileLimitMb = 500,
+        gopSec = 1
+    ),
+    INSTAGRAM_REELS_HDR(
+        shortBadge = "Reels Crisp",
+        titleRu = "Instagram Reels Crisp SDR",
+        titleEn = "Instagram Reels Crisp SDR",
+        descRu = "Мягкий Soft-Knee ролл-офф светов и защита от перешарпа алгоритмов Instagram Reels.",
+        descEn = "Soft-Knee highlight roll-off and anti-halo protection tailored for Instagram Reels.",
+        recommendedRes = "1080 × 1920",
+        recommendedFps = 60,
+        recommendedBitrateMbps = 15.4f,
+        maxFileLimitMb = 250,
+        gopSec = 1
+    ),
+    TELEGRAM_4K_STREAM(
+        shortBadge = "Telegram 4K",
+        titleRu = "Telegram 4K Instant Play",
+        titleEn = "Telegram 4K Instant Play",
+        descRu = "Fast-Start moov в начале файла и максимальная детализация для мгновенного воспроизведения в ТГ.",
+        descEn = "Fast-Start moov atom placement and maximum detail for instant Telegram streaming.",
+        recommendedRes = "2160 × 3840",
+        recommendedFps = 60,
+        recommendedBitrateMbps = 24.5f,
+        maxFileLimitMb = 2000,
+        gopSec = 2
+    );
+
+    fun displayTitle(isRu: Boolean): String = if (isRu) titleRu else titleEn
+    fun displayDesc(isRu: Boolean): String = if (isRu) descRu else descEn
+}
+
+/**
+ * Creator Feature #6: Audio Mastering & Copyright / Trend-Sound Guard
+ */
+enum class AudioGuardMode(
+    val badge: String,
+    val titleRu: String,
+    val titleEn: String,
+    val descRu: String,
+    val descEn: String
+) {
+    STUDIO_AAC_320(
+        badge = "AAC 48kHz",
+        titleRu = "Студийный оригинал (Direct AAC Pass-Through)",
+        titleEn = "Studio Original (Direct AAC Pass-Through)",
+        descRu = "Прямое копирование аудиодорожки 48 kHz без повторного перекодирования и потерь высоких частот.",
+        descEn = "Bit-exact 48 kHz audio stream copy without re-encoding or treble loss."
+    ),
+    LOUDNESS_14_LUFS(
+        badge = "-14 LUFS",
+        titleRu = "Защита речи & Луднесс -14 LUFS (TikTok/Shorts)",
+        titleEn = "Speech Clarity & -14 LUFS Loudness Guard",
+        descRu = "Оптимальный баланс голоса, чтобы лимитер TikTok и YouTube Shorts не глушил дорожку при публикации.",
+        descEn = "Calibrated vocal headroom so TikTok & Shorts limiters never duck your audio track."
+    ),
+    MUTE_FOR_TREND_SOUND(
+        badge = "CLEAN MUTE",
+        titleRu = "Чистый Mute (Под трендовый звук TikTok)",
+        titleEn = "Clean Mute (For Trending TikTok Audio)",
+        descRu = "Полностью удаляет аудиодорожку из MP4, экономя 100% битрейта под видео и наложение звука в самом TikTok.",
+        descEn = "Strips the audio track completely so 100% of container budget goes to video and trending sounds."
+    );
+
+    fun displayTitle(isRu: Boolean): String = if (isRu) titleRu else titleEn
+    fun displayDesc(isRu: Boolean): String = if (isRu) descRu else descEn
+}
+
 object VideoResolutionPresets {
     const val RES_1080P = "1080 × 1920"
     const val RES_1440P = "1440 × 2560"
@@ -114,8 +219,6 @@ object VideoResolutionPresets {
 
     /**
      * Calibrated TikTok ByteVC1 / H.264 High-Profile Anti-Reencode Sweet-Spot Bitrate (in Mbps).
-     * Keeps peak stream bitrate strictly below TikTok's forced-downsampling threshold while
-     * maximizing luma bits-per-pixel with CABAC + Chroma Denoise + Pre-Deblocking.
      */
     fun optimalSweetSpotBitrate(res: String, fps: Int): Float = when {
         res.contains("2160") || res.contains("4K", ignoreCase = true) -> when {
@@ -152,6 +255,9 @@ object VideoFpsPresets {
 
 data class EnhanceSettings(
     val preset: PresetType = PresetType.TIKTOK_ULTRA,
+    val targetPlatform: TargetPlatform = TargetPlatform.TIKTOK_BYTEVC1,
+    val audioGuardMode: AudioGuardMode = AudioGuardMode.STUDIO_AAC_320,
+    val cleanMetadataGuard: Boolean = true,
     val sharpness: Int = 54,
     val microContrast: Int = 26,
     val shadowLift: Int = 11,
@@ -202,6 +308,22 @@ data class VideoItem(
             return String.format(java.util.Locale.US, "%02d:%02d", mins, secs)
         }
 }
+
+/**
+ * Real Frame & Luma Waveform Analysis Result for Creator Studio Tools
+ */
+data class FrameAnalysisResult(
+    val previewBitmap: Bitmap?,
+    val gradedBitmap: Bitmap?,
+    val lumaHistogram32: List<Float>,
+    val averageIre: Int,
+    val shadowCrushPercent: Float,
+    val highlightClipPercent: Float,
+    val dynamicRangeStops: Float,
+    val bitsPerPixel: Float,
+    val compressionRiskPercent: Int,
+    val timestampMs: Long
+)
 
 enum class ProcessingStage(val step: Int, val title: String, val detail: String) {
     ANALYZING(1, "Скан GOP & Деблокинг исходника", "Очистка блочных артефактов, анализ IDR-кадров и джиттера..."),
