@@ -25,6 +25,7 @@ class AppStrings(val lang: AppLanguage) {
 
     // Bottom Navigation Tabs
     val tabOptimize = if (isRu) "Оптимизация" else "Optimize"
+    val tabStudio = if (isRu) "Студия" else "Studio"
     val tabEditor = if (isRu) "Монтаж" else "Editor"
     val tabProjects = if (isRu) "Проекты" else "Projects"
     val tabSettings = if (isRu) "Настройки" else "Settings"

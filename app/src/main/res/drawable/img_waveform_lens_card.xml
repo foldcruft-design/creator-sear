@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="480dp"
+    android:height="360dp"
+    android:viewportWidth="480"
+    android:viewportHeight="360">
+
+    <path android:pathData="M0,0h480v360h-480z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="0"
+                android:endX="480"
+                android:endY="360"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FF070A10" />
+                <item android:offset="1.0" android:color="#FF121722" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Smoked Glass Spheres & Acoustic Luma Curves -->
+    <path
+        android:pathData="M140,180m-86,0a86,86 0,1 1,172 0a86,86 0,1 1,-172 0"
+        android:fillColor="#18FFFFFF"
+        android:strokeWidth="1.5"
+        android:strokeColor="#55FFFFFF" />
+
+    <path
+        android:pathData="M310,170m-104,0a104,104 0,1 1,208 0a104,104 0,1 1,-208 0"
+        android:fillColor="#12FFFFFF"
+        android:strokeWidth="1.5"
+        android:strokeColor="#77FFFFFF" />
+
+    <path
+        android:pathData="M24,260 Q140,110 240,190 T456,120"
+        android:strokeWidth="2.5"
+        android:strokeColor="#AAE2E8F0" />
+
+    <path
+        android:pathData="M24,290 Q160,180 260,230 T456,180"
+        android:strokeWidth="1.4"
+        android:strokeColor="#48FFFFFF" />
+</vector>

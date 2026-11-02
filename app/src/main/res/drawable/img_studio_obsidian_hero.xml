@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="640dp"
+    android:height="360dp"
+    android:viewportWidth="640"
+    android:viewportHeight="360">
+
+    <!-- Deep Obsidian & Graphite Background -->
+    <path android:pathData="M0,0h640v360h-640z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="0"
+                android:endX="640"
+                android:endY="360"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FF05070B" />
+                <item android:offset="0.5" android:color="#FF0E121B" />
+                <item android:offset="1.0" android:color="#FF06080D" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Subtle Metallic Grid Lines -->
+    <path
+        android:pathData="M0,72 L640,72 M0,144 L640,144 M0,216 L640,216 M0,288 L640,288 M128,0 L128,360 M256,0 L256,360 M384,0 L384,360 M512,0 L512,360"
+        android:strokeWidth="1"
+        android:strokeColor="#12FFFFFF" />
+
+    <!-- Soft Radial Silver Glow Behind Cinema Lens -->
+    <path android:pathData="M320,180m-170,0a170,170 0,1 1,340 0a170,170 0,1 1,-340 0">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:centerX="320"
+                android:centerY="180"
+                android:gradientRadius="170"
+                android:type="radial">
+                <item android:offset="0.0" android:color="#38D8E0EC" />
+                <item android:offset="0.55" android:color="#168A94A6" />
+                <item android:offset="1.0" android:color="#0005070B" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Smoked Glass Outer Ring -->
+    <path
+        android:pathData="M320,180m-132,0a132,132 0,1 1,264 0a132,132 0,1 1,-264 0"
+        android:fillColor="#14FFFFFF"
+        android:strokeWidth="1.5"
+        android:strokeColor="#48FFFFFF" />
+
+    <!-- Brushed Titanium Mid Ring -->
+    <path
+        android:pathData="M320,180m-102,0a102,102 0,1 1,204 0a102,102 0,1 1,-204 0"
+        android:fillColor="#1C10141D"
+        android:strokeWidth="2"
+        android:strokeColor="#66D0D7E2" />
+
+    <!-- Inner Aperture Ring -->
+    <path
+        android:pathData="M320,180m-72,0a72,72 0,1 1,144 0a72,72 0,1 1,-144 0"
+        android:fillColor="#CC080B11"
+        android:strokeWidth="1.5"
+        android:strokeColor="#88FFFFFF" />
+
+    <!-- Aperture Blades (Monochrome Silver) -->
+    <path
+        android:pathData="M270,130 L345,112 M370,130 L388,205 M370,230 L295,248 M270,230 L252,155"
+        android:strokeWidth="1.4"
+        android:strokeColor="#44FFFFFF" />
+
+    <!-- Flowing Silver Optical Waveforms -->
+    <path
+        android:pathData="M0,230 C110,160 210,270 320,180 C430,90 530,210 640,140"
+        android:strokeWidth="2.2"
+        android:strokeColor="#78E2E8F0" />
+    <path
+        android:pathData="M0,150 C120,230 220,110 320,180 C420,250 520,130 640,210"
+        android:strokeWidth="1.4"
+        android:strokeColor="#38CBD5E1" />
+
+    <!-- Center Core Specular Highlight -->
+    <path
+        android:pathData="M320,180m-28,0a28,28 0,1 1,56 0a28,28 0,1 1,-56 0"
+        android:fillColor="#26FFFFFF"
+        android:strokeWidth="1.5"
+        android:strokeColor="#B8FFFFFF" />
+    <path
+        android:pathData="M308,166m-7,0a7,7 0,1 1,14 0a7,7 0,1 1,-14 0"
+        android:fillColor="#CCFFFFFF" />
+</vector>

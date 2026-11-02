@@ -219,7 +219,8 @@ fun HomeScreen(
                             onApplyPlatform = { platform ->
                                 activeSettingsRepo.applyPlatformProfile(platform)
                             },
-                            onOpenSettingsTab = { currentTab = 2 },
+                            onOpenStudioTab = { currentTab = 1 },
+                            onOpenSettingsTab = { currentTab = 3 },
                             onUploadClick = {
                                 videoPickerLauncher.launch(
                                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)
@@ -327,6 +328,19 @@ fun HomeScreen(
                         )
                     }
                     1 -> {
+                        CreatorStudioTabScreen(
+                            isRu = strings.isRu,
+                            settings = enhanceSettings,
+                            selectedVideo = selectedVideo,
+                            onSettingsChange = { updated ->
+                                activeSettingsRepo.updateSettings(updated)
+                            },
+                            onApplyPlatform = { platform ->
+                                activeSettingsRepo.applyPlatformProfile(platform)
+                            }
+                        )
+                    }
+                    2 -> {
                         ProjectsScreen(
                             projects = projects,
                             strings = strings,
@@ -349,7 +363,7 @@ fun HomeScreen(
                             }
                         )
                     }
-                    2 -> {
+                    3 -> {
                         SettingsScreen(
                             strings = strings,
                             currentLanguage = currentLanguage,
@@ -366,7 +380,7 @@ fun HomeScreen(
                             }
                         )
                     }
-                    3 -> {
+                    4 -> {
                         currentUser?.let { user ->
                             ProfileScreenContent(
                                 user = user,
@@ -388,7 +402,7 @@ fun HomeScreen(
                 }
             }
 
-            // Sleek Floating Bottom Bar with 4 Tabs
+            // Sleek Floating Bottom Bar with 5 Tabs (Optimize, Studio, Projects, Settings, Profile)
             BottomNavigationBar(
                 strings = strings,
                 currentTab = currentTab,
@@ -629,6 +643,7 @@ private fun OptimizerZilemContent(
     onSelectPreset: (com.example.domain.model.PresetType) -> Unit,
     onSettingsChange: (EnhanceSettings) -> Unit,
     onApplyPlatform: (TargetPlatform) -> Unit,
+    onOpenStudioTab: () -> Unit,
     onOpenSettingsTab: () -> Unit,
     onUploadClick: () -> Unit,
     onSelectDemoVideo: () -> Unit,
@@ -1144,13 +1159,13 @@ private fun OptimizerZilemContent(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(22.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
-                // Separate Dark Smoked-Glass Plaque: 10 Creator Functions with Toggle Switches
-                CreatorProTogglesCard(
+                // Monochrome Gray Visual Banner & Interactive Live Dashboard Widgets (links to Studio tab)
+                HomeStudioOverviewWidget(
                     isRu = strings.isRu,
                     settings = settings,
-                    onSettingsChange = onSettingsChange
+                    onOpenStudioTab = onOpenStudioTab
                 )
 
                 Spacer(modifier = Modifier.height(34.dp))
@@ -1590,7 +1605,7 @@ private fun BottomNavigationBar(
                     Brush.verticalGradient(listOf(Color(0x40FFFFFF), Color(0x12FFFFFF))),
                     RoundedCornerShape(26.dp)
                 )
-                .padding(horizontal = 8.dp, vertical = 8.dp),
+                .padding(horizontal = 6.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -1603,28 +1618,36 @@ private fun BottomNavigationBar(
             )
 
             NavTabItem(
+                title = strings.tabStudio,
+                icon = AppIcons.CenterFocus,
+                isSelected = currentTab == 1,
+                testTag = "nav_tab_studio",
+                onClick = { onTabSelected(1) }
+            )
+
+            NavTabItem(
                 title = strings.tabProjects,
                 icon = AppIcons.History,
-                isSelected = currentTab == 1,
+                isSelected = currentTab == 2,
                 testTag = "nav_tab_projects",
-                onClick = { onTabSelected(1) }
+                onClick = { onTabSelected(2) }
             )
 
             NavTabItem(
                 title = strings.tabSettings,
                 icon = AppIcons.Tune,
-                isSelected = currentTab == 2,
+                isSelected = currentTab == 3,
                 testTag = "nav_tab_settings",
-                onClick = { onTabSelected(2) }
+                onClick = { onTabSelected(3) }
             )
 
             NavTabItem(
                 title = strings.tabProfile,
                 icon = Icons.Default.Person,
-                isSelected = currentTab == 3,
+                isSelected = currentTab == 4,
                 testTag = "nav_tab_profile",
                 showVerifiedDot = isRegistered,
-                onClick = { onTabSelected(3) }
+                onClick = { onTabSelected(4) }
             )
         }
     }
@@ -1655,7 +1678,7 @@ private fun NavTabItem(
                 RoundedCornerShape(18.dp)
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 8.dp)
+            .padding(horizontal = 11.dp, vertical = 8.dp)
             .testTag(testTag),
         contentAlignment = Alignment.Center
     ) {
@@ -1679,11 +1702,11 @@ private fun NavTabItem(
                 }
             }
             if (isSelected) {
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(5.dp))
                 Text(
                     text = title,
                     color = Color.White,
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1
                 )

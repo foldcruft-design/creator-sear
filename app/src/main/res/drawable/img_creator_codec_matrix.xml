@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="640dp"
+    android:height="360dp"
+    android:viewportWidth="640"
+    android:viewportHeight="360">
+
+    <!-- Deep Charcoal & Obsidian Base -->
+    <path android:pathData="M0,0h640v360h-640z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="0"
+                android:endX="640"
+                android:endY="360"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#FF06080D" />
+                <item android:offset="0.5" android:color="#FF111622" />
+                <item android:offset="1.0" android:color="#FF05070B" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Circuit / Matrix Traces in Brushed Silver -->
+    <path
+        android:pathData="M40,90 L180,90 L220,130 M600,90 L460,90 L420,130 M40,270 L180,270 L220,230 M600,270 L460,270 L420,230 M90,180 L210,180 M430,180 L550,180"
+        android:strokeWidth="1.8"
+        android:strokeColor="#36FFFFFF" />
+
+    <!-- Smoked Glass Isometric GPU Core Frame -->
+    <path
+        android:pathData="M220,84 L420,84 A20,20 0 0,1 440,104 L440,256 A20,20 0 0,1 420,276 L220,276 A20,20 0 0,1 200,256 L200,104 A20,20 0 0,1 220,84 Z"
+        android:fillColor="#16FFFFFF"
+        android:strokeWidth="1.8"
+        android:strokeColor="#66FFFFFF" />
+
+    <path
+        android:pathData="M244,108 L396,108 A12,12 0 0,1 408,120 L408,240 A12,12 0 0,1 396,252 L244,252 A12,12 0 0,1 232,240 L232,120 A12,12 0 0,1 244,108 Z"
+        android:fillColor="#D9080B11"
+        android:strokeWidth="1.2"
+        android:strokeColor="#42FFFFFF" />
+
+    <!-- Histogram Bars Inside GPU Core -->
+    <path
+        android:pathData="M256,224 L256,174 M272,224 L272,152 M288,224 L288,136 M304,224 L304,160 M320,224 L320,126 M336,224 L336,144 M352,224 L352,166 M368,224 L368,148 M384,224 L384,182"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:strokeColor="#99E2E8F0" />
+</vector>
